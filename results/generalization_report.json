@@ -1,0 +1,516 @@
+{
+  "standard_group_split": {
+    "auc": 1.0,
+    "at_0.5": {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0
+    },
+    "n_train": 1620,
+    "n_test": 540
+  },
+  "threshold_sweep": [
+    {
+      "threshold": 0.05,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.15,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.45,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.55,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.6,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.65,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.8,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.85,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    },
+    {
+      "threshold": 0.95,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tn": 232,
+      "fp": 0,
+      "fn": 0,
+      "tp": 308,
+      "fpr": 0.0,
+      "youden_j": 1.0
+    }
+  ],
+  "best_f1": {
+    "threshold": 0.05,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tn": 232,
+    "fp": 0,
+    "fn": 0,
+    "tp": 308,
+    "fpr": 0.0,
+    "youden_j": 1.0
+  },
+  "best_youden": {
+    "threshold": 0.05,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tn": 232,
+    "fp": 0,
+    "fn": 0,
+    "tp": 308,
+    "fpr": 0.0,
+    "youden_j": 1.0
+  },
+  "loso": [
+    {
+      "held_out": "powershell_attack",
+      "n_train": 1492,
+      "n_test": 668,
+      "n_test_attack": 420,
+      "n_test_benign": 248,
+      "auc": 0.8103014592933947,
+      "at_0.5": {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 247,
+        "fp": 1,
+        "fn": 420,
+        "tp": 0,
+        "fpr": 0.004032258064516129
+      },
+      "best_thresh_f1": {
+        "threshold": 0.01,
+        "precision": 0.995260663507109,
+        "recall": 0.5,
+        "f1": 0.6656101426307448,
+        "tn": 247,
+        "fp": 1,
+        "fn": 210,
+        "tp": 210,
+        "fpr": 0.004032258064516129,
+        "youden_j": 0.4959677419354839
+      }
+    },
+    {
+      "held_out": "persistence_attack",
+      "n_train": 1492,
+      "n_test": 668,
+      "n_test_attack": 420,
+      "n_test_benign": 248,
+      "auc": 1.0,
+      "at_0.5": {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 248,
+        "fp": 0,
+        "fn": 420,
+        "tp": 0,
+        "fpr": 0.0
+      },
+      "best_thresh_f1": {
+        "threshold": 0.01,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tn": 248,
+        "fp": 0,
+        "fn": 0,
+        "tp": 420,
+        "fpr": 0.0,
+        "youden_j": 1.0
+      }
+    },
+    {
+      "held_out": "ransomware_like",
+      "n_train": 1492,
+      "n_test": 668,
+      "n_test_attack": 420,
+      "n_test_benign": 248,
+      "auc": 0.26405049923195084,
+      "at_0.5": {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 248,
+        "fp": 0,
+        "fn": 420,
+        "tp": 0,
+        "fpr": 0.0
+      },
+      "best_thresh_f1": {
+        "threshold": 0.01,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 246,
+        "fp": 2,
+        "fn": 420,
+        "tp": 0,
+        "fpr": 0.008064516129032258,
+        "youden_j": -0.008064516129032258
+      }
+    },
+    {
+      "held_out": "multi_stage_attack",
+      "n_train": 1852,
+      "n_test": 308,
+      "n_test_attack": 60,
+      "n_test_benign": 248,
+      "auc": 1.0,
+      "at_0.5": {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 248,
+        "fp": 0,
+        "fn": 60,
+        "tp": 0,
+        "fpr": 0.0
+      },
+      "best_thresh_f1": {
+        "threshold": 0.01,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 248,
+        "fp": 0,
+        "fn": 60,
+        "tp": 0,
+        "fpr": 0.0,
+        "youden_j": 0.0
+      }
+    }
+  ],
+  "benign_fpr_standard_test": {
+    "benign_normal": {
+      "n": 130,
+      "fpr@0.5": 0.0,
+      "fp@0.5": 0,
+      "fpr@0.05": 0.0,
+      "fp@0.05": 0
+    },
+    "benign_high_entropy": {
+      "n": 102,
+      "fpr@0.5": 0.0,
+      "fp@0.5": 0,
+      "fpr@0.05": 0.0,
+      "fp@0.05": 0
+    },
+    "benign_all": {
+      "n": 232,
+      "fpr@0.5": 0.0,
+      "fp@0.5": 0,
+      "fpr@0.05": 0.0,
+      "fp@0.05": 0
+    }
+  },
+  "benign_fpr_loso": {
+    "powershell_attack": {
+      "benign_normal": {
+        "n": 140,
+        "fpr@0.5": 0.007142857142857143,
+        "fp@0.5": 1,
+        "fpr@0.05": 0.007142857142857143,
+        "fp@0.05": 1
+      },
+      "benign_high_entropy": {
+        "n": 108,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_all": {
+        "n": 248,
+        "fpr@0.5": 0.004032258064516129,
+        "fp@0.5": 1,
+        "fpr@0.05": 0.004032258064516129,
+        "fp@0.05": 1
+      }
+    },
+    "persistence_attack": {
+      "benign_normal": {
+        "n": 140,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_high_entropy": {
+        "n": 108,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_all": {
+        "n": 248,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      }
+    },
+    "ransomware_like": {
+      "benign_normal": {
+        "n": 140,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_high_entropy": {
+        "n": 108,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_all": {
+        "n": 248,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      }
+    },
+    "multi_stage_attack": {
+      "benign_normal": {
+        "n": 140,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_high_entropy": {
+        "n": 108,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_all": {
+        "n": 248,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      }
+    }
+  },
+  "conclusion": "Standard split is perfect (AUC=1.0) but LOSO fails: the model memorizes scenario-specific indicators and does not transfer to unseen attack styles. Even the best per-LOSO threshold cannot recover detection, and ransomware_like ranks inverted (AUC<0.5). benign_high_entropy FPR is 0.0 on the standard split, so no FP problem there \u2014 the problem is false negatives on novel attacks."
+}

@@ -1,0 +1,11 @@
+# large downloads / caches
+data/raw/MalMem2022.csv
+*.csv.gz
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+# outputs are committed for the demo, but local runs may overwrite
+# (uncomment to ignore results)
+# results/
+# models/

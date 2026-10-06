@@ -1,0 +1,32 @@
+{
+  "real_cic_malmem": {
+    "n_rows": 58596,
+    "n_features": 55,
+    "label_col": "Class",
+    "precision": 0.999829380651766,
+    "recall": 1.0,
+    "f1": 0.9999146830475215,
+    "roc_auc": 0.9999999417582033,
+    "tn": 5859,
+    "fp": 1,
+    "fn": 0,
+    "tp": 5860,
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       1.00      1.00      1.00      5860\n           1       1.00      1.00      1.00      5860\n\n    accuracy                           1.00     11720\n   macro avg       1.00      1.00      1.00     11720\nweighted avg       1.00      1.00      1.00     11720\n"
+  },
+  "real_n_features": 55,
+  "synthetic_standard": {
+    "threshold": 0.5,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tn": 232,
+    "fp": 0,
+    "fn": 0,
+    "tp": 308,
+    "fpr": 0.0
+  },
+  "synthetic_auc": 1.0,
+  "feature_overlap": [],
+  "n_overlap": 0,
+  "conclusion": "Both models score ~1.0 on their own test sets, but feature spaces are disjoint (memory-forensics counters vs 30-s endpoint window behaviors; overlap=0). No direct transfer is possible without a unified features_v2 schema mapping both sources to shared primitives (process rarity, entropy velocity, persistence, C2 cadence)."
+}

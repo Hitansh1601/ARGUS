@@ -1,6 +1,14 @@
-pandas
-numpy
-scikit-learn
-xgboost
-matplotlib
-seaborn
+# ARGUS runtime dependencies (pinned from working env, Python 3.13)
+pandas==3.0.0
+numpy==2.2.4
+scikit-learn==1.6.1
+scipy==1.15.2
+xgboost==3.4.1
+matplotlib==3.11.2
+seaborn==0.13.2
+shap==0.52.0
+PyYAML==6.0.2
+joblib==1.4.2
+
+# Testing / dev (needed for `pytest tests/`)
+pytest>=8.0

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import logging
+
 import matplotlib
 
 # Use a non-GUI backend because ARGUS saves plots to files.
@@ -22,17 +24,28 @@ from sklearn.metrics import (
 from sklearn.model_selection import GroupShuffleSplit
 from xgboost import XGBClassifier
 
+try:
+    from src.config import load_config
+except ImportError:  # script-run fallback
+    try:
+        from config import load_config
+    except ImportError:
+        load_config = None  # type: ignore
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+log = logging.getLogger("argus.train")
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-INPUT_FILE = (
-    BASE_DIR
-    / "data"
-    / "processed"
-    / "argus_features.csv"
-)
+_CFG = load_config() if load_config else {}
+_DATA_CFG = _CFG.get("data", {})
+_MODEL_CFG = _CFG.get("model", {})
+_EVAL_CFG = _CFG.get("eval", {})
 
-RESULTS_DIR = BASE_DIR / "results"
+INPUT_FILE = BASE_DIR / _DATA_CFG.get("features", "data/processed/argus_features.csv")
+
+RESULTS_DIR = BASE_DIR / _DATA_CFG.get("results_dir", "results")
 MODEL_DIR = BASE_DIR / "models"
 
 RESULTS_DIR.mkdir(
@@ -101,8 +114,8 @@ def main():
 
     splitter = GroupShuffleSplit(
         n_splits=1,
-        test_size=0.25,
-        random_state=42,
+        test_size=_EVAL_CFG.get("test_size", 0.25),
+        random_state=_EVAL_CFG.get("random_state", 42),
     )
 
     train_idx, test_idx = next(
@@ -137,17 +150,19 @@ def main():
 
     print()
     print("Training XGBoost...")
+    log.info("hyperparams=%s", _MODEL_CFG or "defaults")
 
     model = XGBClassifier(
-        n_estimators=250,
-        max_depth=5,
-        learning_rate=0.05,
-        subsample=0.9,
-        colsample_bytree=0.9,
-        objective="binary:logistic",
-        eval_metric="logloss",
-        random_state=42,
-        n_jobs=4,
+        n_estimators=int(_MODEL_CFG.get("n_estimators", 250)),
+        max_depth=int(_MODEL_CFG.get("max_depth", 5)),
+        learning_rate=float(_MODEL_CFG.get("learning_rate", 0.05)),
+        subsample=float(_MODEL_CFG.get("subsample", 0.9)),
+        colsample_bytree=float(_MODEL_CFG.get("colsample_bytree", 0.9)),
+        objective=_MODEL_CFG.get("objective", "binary:logistic"),
+        eval_metric=_MODEL_CFG.get("eval_metric", "logloss"),
+        random_state=int(_MODEL_CFG.get("random_state", 42)),
+        n_jobs=int(_MODEL_CFG.get("n_jobs", 1)),  # n_jobs>1 is ~100x slower on Windows/OpenMP
+        tree_method=_MODEL_CFG.get("tree_method", "hist"),
     )
 
     model.fit(
