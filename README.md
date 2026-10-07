@@ -1,24 +1,31 @@
-# ARGUS
+# ARGUS — Windows-only self-learning guard
 
-Synthetic endpoint-detection pipeline: **simulator → features → XGBoost → risk engine → SOC alert**, plus a real-data baseline.
+Synthetic + live endpoint-detection: **simulator → features → XGBoost → risk engine → guard (alert + quarantine)**, plus nightly retrain. Windows 10+ only, admin assumed.
 
-## Quickstart
+## Quickstart (Windows PowerShell, admin)
 
-```bash
-pip install -r requirements.txt
-make data features train alert
+```powershell
+python -m pip install -r requirements.txt
+.\tasks.ps1 data; .\tasks.ps1 features; .\tasks.ps1 train; .\tasks.ps1 alert
 # fast tests (<30s)
-make test-fast
+.\tasks.ps1 test-fast
 # full regen e2e (74k events, 2880 windows, ~2-5 min)
-make test-e2e
+.\tasks.ps1 test-e2e
+# live guard (dry-run lists actions, --enforce to act)
+python -m src.guard --once
+python -m src.guard --once --enforce
+# nightly self-learn
+python src/retrain.py
 ```
 
 Run order:
-1. `python3 simulator/generator.py` — 8 scenarios × 60 runs × 6 windows (30s) → `data/raw/synthetic/*.jsonl` + `all_synthetic_telemetry.jsonl` (74,524 events). Use `make data`.
-2. `python3 src/feature_engineering.py` — windowed 30-feature matrix → `data/processed/argus_features.csv` (2880 rows). Use `make features`.
-3. `python3 src/train_model.py [--no-plots] [--test-size 0.25] [--seed 42]` — GroupShuffleSplit by `run_id`, XGBoost (250, depth 5) → `models/argus_xgboost.json`, `results/metrics.json`, PNGs. Use `make train`.
-4. `python3 -m src.argus_alert [--scenario ransomware_like] [--top-n 1]` — demo SOC alert. Use `make alert`.
-5. `python3 argus_baseline.py` — side-branch on real CIC-MalMem-2022 (`MalMem2022.csv` from HuggingFace `bvk/CIC-MalMem-2022` / Kaggle / UNB) → root `confusion_matrix.png`, `roc_curve.png`, `shap_summary.png`.
+1. `python simulator/generator.py` — 8 scenarios × 60 runs × 6 windows (30s) → `data/raw/synthetic/*.jsonl` + `all_synthetic_telemetry.jsonl` (74,524 events). Use `.\tasks.ps1 data`.
+2. `python src/feature_engineering.py` — windowed 30-feature matrix → `data/processed/argus_features.csv` (2880 rows). Use `.\tasks.ps1 features`.
+3. `python src/train_model.py [--no-plots] [--test-size 0.25] [--seed 42]` — GroupShuffleSplit by `run_id`, XGBoost (250, depth 5) → `models/argus_xgboost.json`, `results/metrics.json`, PNGs. Use `.\tasks.ps1 train`.
+4. `python -m src.argus_alert [--scenario ransomware_like] [--top-n 1]` — demo SOC alert. Use `.\tasks.ps1 alert`.
+5. `python -m src.guard --once [--enforce]` — live ETW/EventLog + psutil snapshot → quarantine + feedback.db. Needs admin.
+6. `python src/retrain.py [--label-feedback labels.csv]` — nightly retrain with drift gate.
+7. `python argus_baseline.py` — side-branch on real CIC-MalMem-2022 (`MalMem2022.csv` from HuggingFace `bvk/CIC-MalMem-2022` / Kaggle / UNB) → root `confusion_matrix.png`, `roc_curve.png`, `shap_summary.png`.
 
 ## Structure
 
@@ -27,13 +34,16 @@ Run order:
 - `src/train_model.py` — `train_and_evaluate()` testable core, `metrics.json` for CI gates. Current: P 0.998 / R 1.0 / F1 0.999 / AUC 1.0.
 - `src/risk_engine.py` — `PROB_WEIGHT=60` + `WEIGHTS` table + `THRESHOLDS` (75/50/25), `explain_risk()`.
 - `src/argus_alert.py` — `collect_evidence()` in parity with risk weights (incl. high-entropy writes), `select_suspicious()`, robust imports (`python -m src.argus_alert` from root or `python src/argus_alert.py`).
+- `src/collector_windows.py` — live ETW/EventLog + psutil + Run keys → same schema as generator (Win10+, admin).
+- `src/guard.py` — score → kill Office-spawned LOLBins, quarantine files, remove SUSPICIOUS Run values only (allowlist + review), log to `feedback.db`.
+- `src/retrain.py` — nightly retrain with feedback overrides + drift gate vs golden.
 - `data/`, `models/argus_xgboost.json`, `results/` (argus_* PNGs + `feature_importance.csv` + `metrics.json`).
 
 ## Tests
 
-- `pytest -m "not e2e"` — 26 unit/integration (schema, velocity, persistence, split, risk table, alert).
-- `pytest -m e2e` — full `generator.main()` regen + leakage check + train gate (≥0.90, within 0.05 of `tests/golden/baseline_metrics.json`).
-- `pytest` — all 29.
+- `python -m pytest -m "not e2e"` — 33 unit/integration (schema, velocity, persistence case-insensitive, pwsh variants, entropy file-only, guard dry-run, collector).
+- `python -m pytest -m e2e` — full `generator.main()` regen + leakage check + train gate (≥0.90, within 0.05 of `tests/golden/baseline_metrics.json`).
+- `python -m pytest` — all 36.
 
 ## Known gaps / next
 

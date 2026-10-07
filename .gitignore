@@ -5,3 +5,20 @@ __pycache__/
 .DS_Store
 .venv/
 venv/
+# ARGUS generated artifacts (regenerated via tasks.ps1, do not commit)
+/data/raw/synthetic/*.jsonl
+/data/raw/synthetic/all_synthetic_telemetry.jsonl
+/data/processed/argus_features.csv
+/models/argus_xgboost.json
+/results/*.png
+/results/feature_importance.csv
+# Keep results/metrics.json + tests/golden as CI gates, ignore the rest
+# Local feedback DB (host-specific)
+feedback.db
+feedback.db-journal
+/quarantine/
+# Nightly retrain artifacts (host-specific, regenerated)
+/models/argus_xgboost.*.json
+/results/retrain-*.log
+/results/feedback_review.csv
+/data/live/

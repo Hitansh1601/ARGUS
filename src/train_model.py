@@ -1,6 +1,7 @@
 from pathlib import Path
 import argparse
 import json
+import os
 
 import matplotlib
 
@@ -47,15 +48,7 @@ TEST_SIZE = 0.25
 RANDOM_STATE = 42
 THRESHOLD = 0.5
 
-RESULTS_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-MODEL_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
+# NOTE: dirs created in main(), not at import.
 
 
 def train_and_evaluate(df, test_size=TEST_SIZE, seed=RANDOM_STATE,
@@ -92,7 +85,7 @@ def train_and_evaluate(df, test_size=TEST_SIZE, seed=RANDOM_STATE,
         objective="binary:logistic",
         eval_metric="logloss",
         random_state=seed,
-        n_jobs=4,
+        n_jobs=os.cpu_count() or 4,
     )
     model.fit(X_train, y_train)
 
@@ -113,6 +106,8 @@ def train_and_evaluate(df, test_size=TEST_SIZE, seed=RANDOM_STATE,
 
 
 def main(test_size=TEST_SIZE, seed=RANDOM_STATE, no_plots=False):
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
     if not INPUT_FILE.exists():
         raise FileNotFoundError(

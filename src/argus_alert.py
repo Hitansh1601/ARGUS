@@ -82,73 +82,66 @@ def collect_evidence(row):
     return evidence
 
 
-def print_alert(row, probability, risk_score, severity):
+def _supports_unicode():
+    try:
+        import sys
+        enc = (sys.stdout.encoding or "").lower()
+        return "utf" in enc
+    except Exception:
+        return False
 
-    print()
-    print("╔" + "═" * 68 + "╗")
-    print("║" + "ARGUS SECURITY ALERT".center(68) + "║")
-    print("╠" + "═" * 68 + "╣")
 
-    print(
-        f"║ Host             : "
-        f"{str(row['host_id']):<46}║"
-    )
+def _safe_str(row, key, default="-"):
+    try:
+        v = row.get(key, default) if hasattr(row, "get") else row[key]
+    except Exception:
+        return str(default)
+    if v is None:
+        return str(default)
+    try:
+        import math
+        if isinstance(v, float) and math.isnan(v):
+            return str(default)
+    except Exception:
+        pass
+    s = str(v)
+    return s if len(s) <= 46 else s[:43] + "..."
 
-    print(
-        f"║ Run              : "
-        f"{str(row['run_id']):<46}║"
-    )
 
-    print(
-        f"║ Window           : "
-        f"{str(row['window_id']):<46}║"
-    )
-
-    print(
-        f"║ Scenario         : "
-        f"{str(row['scenario']):<46}║"
-    )
-
-    print("║" + " " * 68 + "║")
-
-    print(
-        f"║ Threat Probability : "
-        f"{probability * 100:>7.2f}%"
-        + " " * 43
-        + "║"
-    )
-
-    print(
-        f"║ Risk Score         : "
-        f"{risk_score:>7.2f}/100"
-        + " " * 45
-        + "║"
-    )
-
-    print(
-        f"║ Severity           : "
-        f"{severity:<46}║"
-    )
-
-    print("║" + " " * 68 + "║")
-
-    print("║ Evidence:".ljust(69) + "║")
-
-    evidence = collect_evidence(row)
-
-    for item in evidence:
-        print(
-            f"║  • {item:<64}║"
-        )
-
-    print("║" + " " * 68 + "║")
-
-    print(
-        f"║ Attack Phase      : "
-        f"{str(row['dominant_phase']):<46}║"
-    )
-
-    print("╚" + "═" * 68 + "╝")
+def print_alert(row, probability, risk_score, severity, ascii_only=False):
+    use_unicode = (not ascii_only) and _supports_unicode()
+    if use_unicode:
+        TL, TR, ML, MR, BL, BR, H, V = "\u2554", "\u2557", "\u2560", "\u2563", "\u255a", "\u255d", "\u2550", "\u2551"
+        bullet = "\u2022"
+    else:
+        TL, TR, ML, MR, BL, BR, H, V = "+", "+", "+", "+", "+", "+", "-", "|"
+        bullet = "*"
+    try:
+        print()
+        print(TL + H * 68 + TR)
+        print(V + "ARGUS SECURITY ALERT".center(68) + V)
+        print(ML + H * 68 + MR)
+        print(f"{V} Host             : {_safe_str(row, 'host_id'):<46}{V}")
+        print(f"{V} Run              : {_safe_str(row, 'run_id'):<46}{V}")
+        print(f"{V} Window           : {_safe_str(row, 'window_id'):<46}{V}")
+        print(f"{V} Scenario         : {_safe_str(row, 'scenario'):<46}{V}")
+        print(V + " " * 68 + V)
+        print(f"{V} Threat Probability : {float(probability) * 100:>7.2f}%" + " " * 43 + V)
+        print(f"{V} Risk Score         : {float(risk_score):>7.2f}/100" + " " * 45 + V)
+        print(f"{V} Severity           : {str(severity):<46}{V}")
+        print(V + " " * 68 + V)
+        print((V + " Evidence:").ljust(69) + V)
+        evidence = collect_evidence(row)
+        for item in evidence:
+            s = str(item)
+            if len(s) > 64:
+                s = s[:61] + "..."
+            print(f"{V}  {bullet} {s:<64}{V}")
+        print(V + " " * 68 + V)
+        print(f"{V} Attack Phase      : {_safe_str(row, 'dominant_phase'):<46}{V}")
+        print(BL + H * 68 + BR)
+    except UnicodeEncodeError:
+        print_alert(row, probability, risk_score, severity, ascii_only=True)
 
 
 def select_suspicious(df, scenario="ransomware_like", top_n=1):

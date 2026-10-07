@@ -6,23 +6,23 @@ on:
 
 jobs:
   fast:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
       - run: pip install -r requirements.txt
-      - run: pytest -m "not e2e" -v
+      - run: python -m pytest -m "not e2e" -v
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     # Full regen is slower (~2-5 min with 74k events); run nightly + on demand.
     if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[e2e]')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
       - run: pip install -r requirements.txt
-      - run: pytest -m e2e -v
+      - run: python -m pytest -m e2e -v

@@ -95,41 +95,65 @@ def build_features(df):
     # Process features
     # -----------------------------------------------------
 
-    df["is_powershell"] = (
-        df["process_name"]
-        .fillna("")
-        .str.lower()
-        .eq("powershell.exe")
-    )
+    # Windows-only: match by basename, case-insensitive, handles full paths
+    # e.g. C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+    def _basename(series):
+        return (
+            series.fillna("")
+            .str.lower()
+            .str.replace("/", "\\", regex=False)
+            .str.split("\\")
+            .str[-1]
+        )
 
-    df["is_cmd"] = (
-        df["process_name"]
-        .fillna("")
-        .str.lower()
-        .eq("cmd.exe")
-    )
+    _proc_base = _basename(df["process_name"])
+    _parent_base = _basename(df["parent_process"])
+
+    POWERSHELL_NAMES = {
+        "powershell.exe",
+        "powershell_ise.exe",
+        "pwsh.exe",
+    }
+
+    CMD_NAMES = {
+        "cmd.exe",
+    }
+
+    df["is_powershell"] = _proc_base.isin(POWERSHELL_NAMES)
+
+    df["is_cmd"] = _proc_base.isin(CMD_NAMES)
 
     suspicious_children = [
         "powershell.exe",
+        "powershell_ise.exe",
+        "pwsh.exe",
         "cmd.exe",
+        "wscript.exe",
+        "cscript.exe",
+        "mshta.exe",
+        "rundll32.exe",
+        "msiexec.exe",
+        "certutil.exe",
+        "bitsadmin.exe",
+        "regsvr32.exe",
     ]
 
     suspicious_parents = [
         "winword.exe",
         "excel.exe",
         "outlook.exe",
+        "powerpnt.exe",
+        "acrord32.exe",
+        "iexplore.exe",
+        "chrome.exe",
+        "firefox.exe",
+        "msedge.exe",
     ]
 
     df["suspicious_parent_child"] = (
-        df["parent_process"]
-        .fillna("")
-        .str.lower()
-        .isin(suspicious_parents)
+        _parent_base.isin(suspicious_parents)
         &
-        df["process_name"]
-        .fillna("")
-        .str.lower()
-        .isin(suspicious_children)
+        _proc_base.isin(suspicious_children)
     )
 
     # -----------------------------------------------------
@@ -140,12 +164,18 @@ def build_features(df):
         df["event_type"] == "network_connection"
     )
 
-    df["network_time_diff"] = (
+    # Keep NaN for non-network rows and first packet in window.
+    # average_network_interval below excludes zeros so 1-beacon
+    # windows don't look like C2 beacons.
+    _net_diff = (
         df.loc[network_mask]
         .groupby(group_columns)["timestamp"]
         .diff()
         .dt.total_seconds()
-        .fillna(0)
+    )
+    df["network_time_diff"] = _net_diff.reindex(df.index)
+    df["network_time_diff_for_avg"] = df["network_time_diff"].where(
+        df["network_time_diff"] > 0
     )
 
     # -----------------------------------------------------
@@ -238,17 +268,32 @@ def build_features(df):
         features["file_write_count"] / float(WINDOW_SECONDS)
     )
 
+    # Entropy averaged over file events only. Non-file events have
+    # entropy 0 after fillna and would drag benign windows down,
+    # making separation artificially easy.
+    df["entropy_after_file"] = df["entropy_after"].where(
+        df["file_signal"] == 1
+    )
+    df["entropy_delta_file"] = df["entropy_delta"].where(
+        df["file_signal"] == 1
+    )
+
     features["entropy_mean"] = grouped[
-        "entropy_after"
+        "entropy_after_file"
     ].mean()
 
     features["entropy_delta_mean"] = grouped[
-        "entropy_delta"
+        "entropy_delta_file"
     ].mean()
 
+    # Count high-entropy file_write events only (not reads).
+    df["is_high_entropy_write"] = (
+        (df["event_type"] == "file_write")
+        & (df["entropy_delta"] > HIGH_ENTROPY_DELTA_THRESHOLD)
+    )
     features["high_entropy_write_count"] = grouped[
-        "entropy_delta"
-    ].apply(lambda x: (x > HIGH_ENTROPY_DELTA_THRESHOLD).sum())
+        "is_high_entropy_write"
+    ].sum()
 
     # -----------------------------------------------------
     # Registry features
@@ -266,12 +311,14 @@ def build_features(df):
         ).sum()
     )
 
+    # Case-insensitive. `currentversion\run` covers Run, RunOnce,
+    # RunServices (all start with ...\Run).
     features["persistence_key_count"] = grouped[
         "registry_key"
     ].apply(
-        lambda x: x.fillna("").str.contains(
-            r"CurrentVersion\Run",
-            regex=False
+        lambda x: x.fillna("").str.lower().str.contains(
+            r"currentversion\run",
+            regex=False,
         ).sum()
     )
 
@@ -299,8 +346,10 @@ def build_features(df):
         "bytes_received"
     ].sum()
 
+    # Exclude first-packet zeros: mean over >0 intervals only.
+    # Windows with 0-1 beacons -> NaN -> filled to 0 later.
     features["average_network_interval"] = grouped[
-        "network_time_diff"
+        "network_time_diff_for_avg"
     ].mean()
 
     # -----------------------------------------------------

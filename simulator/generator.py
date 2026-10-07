@@ -1,6 +1,10 @@
+import argparse
+import hashlib
 import json
+import os
 import random
 import uuid
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -9,7 +13,7 @@ random.seed(SEED)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = BASE_DIR / "data" / "raw" / "synthetic"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+ # mkdir moved to main() for import safety
 
 SCENARIOS = [
     "benign_normal",
@@ -889,23 +893,43 @@ def generate_run(scenario, run_number):
     return all_events
 
 
-def main():
+def _gen_run_worker(args):
+    """Worker: deterministic per-(scenario, run) seed, order-independent."""
+    scenario, run_number = args
+    digest = hashlib.md5(f"{SEED}:{scenario}:{run_number}".encode()).digest()
+    random.seed(int.from_bytes(digest[:8], "little"))
+    return scenario, run_number, generate_run(scenario, run_number)
+
+
+def main(runs_per_scenario=RUNS_PER_SCENARIO, workers=1):
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     combined_file = OUTPUT_DIR / "all_synthetic_telemetry.jsonl"
 
     total_events = 0
+    jobs = [
+        (scenario, run_number)
+        for scenario in SCENARIOS
+        for run_number in range(1, runs_per_scenario + 1)
+    ]
 
     with combined_file.open("w", encoding="utf-8") as combined:
-
         for scenario in SCENARIOS:
             scenario_file = OUTPUT_DIR / f"{scenario}.jsonl"
 
             with scenario_file.open("w", encoding="utf-8") as f:
-                for run_number in range(1, RUNS_PER_SCENARIO + 1):
-                    events = generate_run(
-                        scenario,
-                        run_number
-                    )
+                if workers == 1:
+                    ordered = [
+                        (scenario, rn, generate_run(scenario, rn))
+                        for rn in range(1, runs_per_scenario + 1)
+                    ]
+                else:
+                    scenario_jobs = [(s, rn) for s, rn in jobs if s == scenario]
+                    with ProcessPoolExecutor(max_workers=workers) as pool:
+                        # map preserves input order -> deterministic file layout
+                        results = pool.map(_gen_run_worker, scenario_jobs)
+                        ordered = list(results)
 
+                for _, _, events in ordered:
                     for event in events:
                         line = json.dumps(event)
 
@@ -933,4 +957,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="ARGUS synthetic telemetry generator")
+    parser.add_argument("--runs", type=int, default=RUNS_PER_SCENARIO,
+                        help="runs per scenario (default: %(default)s)")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="parallel worker processes; 1 = serial legacy path")
+    args = parser.parse_args()
+    main(runs_per_scenario=args.runs, workers=args.workers)
