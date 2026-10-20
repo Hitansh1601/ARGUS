@@ -1,0 +1,45 @@
+<Sysmon schemaversion="4.90">
+  <!-- ARGUS minimal Sysmon config: process, network, Run-key persistence.
+       Install (elevated): sysmon64.exe -accepteula -i scripts\sysmon-argus.xml
+       Update config:      sysmon64.exe -c scripts\sysmon-argus.xml -->
+  <HashAlgorithms>*</HashAlgorithms>
+  <EventFiltering>
+    <!-- Process creation: LOLBins + Office parents matter most to ARGUS -->
+    <ProcessCreate onmatch="include">
+      <Image condition="end with">powershell.exe</Image>
+      <Image condition="end with">powershell_ise.exe</Image>
+      <Image condition="end with">pwsh.exe</Image>
+      <Image condition="end with">cmd.exe</Image>
+      <Image condition="end with">wscript.exe</Image>
+      <Image condition="end with">cscript.exe</Image>
+      <Image condition="end with">mshta.exe</Image>
+      <Image condition="end with">rundll32.exe</Image>
+      <Image condition="end with">msiexec.exe</Image>
+      <Image condition="end with">certutil.exe</Image>
+      <Image condition="end with">bitsadmin.exe</Image>
+      <Image condition="end with">regsvr32.exe</Image>
+      <ParentImage condition="end with">winword.exe</ParentImage>
+      <ParentImage condition="end with">excel.exe</ParentImage>
+      <ParentImage condition="end with">outlook.exe</ParentImage>
+      <ParentImage condition="end with">powerpnt.exe</ParentImage>
+    </ProcessCreate>
+    <!-- Network: executables making outbound connections -->
+    <NetworkConnect onmatch="include">
+      <Image condition="end with">powershell.exe</Image>
+      <Image condition="end with">pwsh.exe</Image>
+      <Image condition="end with">cmd.exe</Image>
+      <Image condition="end with">mshta.exe</Image>
+      <Image condition="end with">rundll32.exe</Image>
+      <Image condition="end with">certutil.exe</Image>
+      <Image condition="end with">bitsadmin.exe</Image>
+    </NetworkConnect>
+    <!-- Registry: Run-key persistence only (low volume) -->
+    <RegistryEvent onmatch="include">
+      <TargetObject condition="contains">CurrentVersion\Run</TargetObject>
+    </RegistryEvent>
+    <!-- Noise off: keep the rest excluded for ARGUS scope -->
+    <FileCreate onmatch="exclude" />
+    <RawAccessRead onmatch="exclude" />
+    <DriverLoad onmatch="exclude" />
+  </EventFiltering>
+</Sysmon>

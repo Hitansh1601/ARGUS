@@ -1,35 +1,36 @@
 .PHONY: install data features train alert test test-fast test-e2e baseline clean
+# Windows 10+ primary: use .\tasks.ps1 <task>. Makefile kept for compat.
+# Use `python` (not `python3`) for Windows.
 
 install:
-	pip install -r requirements.txt
+	python -m pip install -r requirements.txt
 
 data:
-	python3 simulator/generator.py
+	python simulator/generator.py
 
 features:
-	python3 src/feature_engineering.py
+	python src/feature_engineering.py
 
 train:
-	python3 src/train_model.py
+	python src/train_model.py
 
 train-fast:
-	python3 src/train_model.py --no-plots
+	python src/train_model.py --no-plots
 
 alert:
-	python3 -m src.argus_alert --scenario ransomware_like
+	python -m src.argus_alert --scenario ransomware_like
 
 baseline:
-	python3 argus_baseline.py
+	python argus_baseline.py
 
 test:
-	pytest -v
+	python -m pytest -v
 
 test-fast:
-	pytest -m "not e2e" -v
+	python -m pytest -m "not e2e" -v
 
 test-e2e:
-	pytest -m e2e -v
+	python -m pytest -m e2e -v
 
 clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -name "*.pyc" -delete 2>/dev/null || true
+	python -c "import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; list(map(lambda p: p.unlink(missing_ok=True), pathlib.Path('.').rglob('*.pyc')))"
