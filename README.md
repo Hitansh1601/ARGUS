@@ -121,7 +121,25 @@ Root `confusion_matrix.png`: TN 5859, FP 1, FN 0, TP 5860 — same story on real
 memory features: near-perfect because the two tasks use **different feature
 spaces** (CIC memory counters vs ARGUS 30 window features). There is no direct
 transfer without a feature map; see `results/real_validation_report.md`
-(Task 4) for the side-by-side and what is needed to unify.
+for the side-by-side and what is needed to unify.
+
+### Unified v2: can a shared schema transfer? (`src/features_v2.py`, Batch D)
+
+Only 2 primitives are honestly measurable on both sides (`process_count`,
+`hidden_artifact`); everything else is a documented one-side-only gap.
+Joint/cross-source experiment (`results/unified_report.md`):
+
+| protocol | F1 | AUC |
+|---|---|---|
+| argus-only | 0.89 | 0.82 |
+| cic-only | 0.54 | 0.70 |
+| cross cic→argus | 0.83 | **0.50** |
+| cross argus→cic | 0.67 | **0.50** |
+
+Cross-source ranking is exactly chance (AUC 0.50 both ways); the high cross
+F1 is a base-rate illusion (all-positive predictions, recall 1.0). Lesson
+for review: **report AUC, not F1, for transfer claims** — and post-hoc
+mapping cannot substitute for a common sensor.
 
 ## Project structure
 
@@ -136,6 +154,8 @@ src/evaluate_generalization.py LOSO (6 folds) + threshold + benign FPR
 src/validate_real.py           real-data side-by-side
 src/config.py + config.yaml    central paths/hyperparams/thresholds
 src/dashboard.py               static HTML dashboard generator
+src/features_v2.py             shared CIC<->ARGUS schema (2 primitives + gaps)
+src/validate_unified.py        joint/cross-source experiment -> unified_report.*
 demo/malicious_similar_demo.py safe reviewer demo (no virus)
 Makefile + tasks.ps1           Windows-friendly task runners
 pytest.ini + tests/golden/     e2e markers + metric gate
@@ -165,8 +185,11 @@ defaults so they run even without the config file.
    information (Batch C remainder).
 2. **Calibration**: default 0.5 holds (tuned 0.05–0.10 gives the same F1 here);
    threshold stays in `config.yaml: alerting.threshold` and `metrics.json`.
-3. **Real telemetry**: unify CIC-MalMem and ARGUS windows behind one
-   `features_v2` schema before claiming real-world performance (Batch D).
+3. **Real telemetry**: unified CIC-MalMem and ARGUS windows behind one
+   `features_v2` schema before claiming real-world performance — DONE as a
+   quantified negative (`src/features_v2.py`, `results/unified_report.md`):
+   cross-source AUC 0.50 both ways. Next step needs a common sensor, not
+   more mapping.
 4. **Live enforcement deliberately deferred**: the `argus-improvements`
    guard/collector/nightly-retrain stack (`src/guard.py`,
    `src/collector_windows.py`, Sysmon XML) is Windows-only + admin-gated.

@@ -41,6 +41,19 @@ def load_json(p: Path) -> dict:
     return json.loads(p.read_text()) if p.exists() else {}
 
 
+def unified_table(uni: dict) -> str:
+    rows = uni.get("protocols", [])
+    if not rows:
+        return "<p><i>unified_report.json missing — run src/validate_unified.py</i></p>"
+    trs = "".join(
+        f"<tr><td>{html.escape(r['protocol'])}</td><td>{r['n_test']}</td>"
+        f"<td>{r['f1']:.4f}</td><td>{r['roc_auc']:.4f}</td></tr>\n" for r in rows)
+    verdict = html.escape(uni.get("verdict", ""))
+    return (f"<table border=1 cellpadding=4><tr><th>protocol</th><th>n</th>"
+            f"<th>F1</th><th>AUC</th></tr>\n{trs}</table>"
+            f"<p>{verdict} See unified_report.md.</p>")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(RESULTS / "dashboard.html"))
@@ -50,6 +63,7 @@ def main():
 
     gen = load_json(RESULTS / "generalization_report.json")
     real = load_json(RESULTS / "real_validation_report.json")
+    uni = load_json(RESULTS / "unified_report.json")
     std = gen.get("standard_group_split", {})
     m50 = std.get("at_0.5", {})
     best = gen.get("best_f1", {})
@@ -106,6 +120,8 @@ inverted (AUC 0.26) — no threshold fixes disjoint indicators.</p>
 <td>{r.get('tn', '?')}/{r.get('fp', '?')}/{r.get('fn', '?')}/{r.get('tp', '?')}</td></tr></table>
 <p>Feature spaces are disjoint (memory counters vs window behaviors, overlap
 {real.get('n_overlap', '?')}); side-by-side only, no transfer. See real_validation_report.md.</p>
+<h2>Unified v2 (shared primitives: does post-hoc mapping transfer?)</h2>
+{unified_table(uni)}
 <h2>Top features</h2>
 <table border=1 cellpadding=4><tr><th>feature</th><th>importance</th></tr>
 {fi_rows}</table>
@@ -118,7 +134,8 @@ inverted (AUC 0.26) — no threshold fixes disjoint indicators.</p>
 {img_tag(RESULTS / 'real_roc_curve.png', 'CIC-MalMem ROC')}
 <h2>Reports</h2>
 <ul><li>results/generalization_report.md</li><li>results/real_validation_report.md</li>
-<li>config.yaml + src/config.py</li><li>pytest tests/ (14 tests)</li></ul>
+<li>results/unified_report.md</li>
+<li>config.yaml + src/config.py</li><li>pytest tests/</li></ul>
 """
     doc = ("<!doctype html><html><head><meta charset=utf-8><title>ARGUS dashboard</title>"
            "<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:2em auto;padding:0 1em}"

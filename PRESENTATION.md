@@ -82,8 +82,10 @@ Open `results/generalization_report.md`:
 - Benign FPR 0.0.
 
 Open `results/real_validation_report.md`: CIC-MalMem F1 0.9999, but 0 shared
-columns with ARGUS features → side-by-side only, needs `features_v2`
-(Batch D, still open).
+columns with ARGUS features. Open `results/unified_report.md` (Batch D):
+only 2 primitives shared; cross-source AUC 0.50 both ways while cross F1
+looks high (0.83/0.67) — base-rate illusion (all-positive, recall 1.0).
+Takeaway line: "Report AUC, not F1, for transfer claims."
 
 Do NOT re-run live on stage: `evaluate_generalization.py` (7 trainings),
 `validate_real.py` full (58,596 rows) — show the saved reports.
