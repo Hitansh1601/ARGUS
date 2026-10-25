@@ -9,3 +9,8 @@ __pycache__/
 # (uncomment to ignore results)
 # results/
 # models/
+# live/self-learn artifacts (guard stack, when adopted)
+data/live/
+feedback.db*
+*.reg.bak
+results/feedback_review.csv
