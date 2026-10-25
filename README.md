@@ -3,12 +3,13 @@
 ARGUS detects malicious endpoint behavior from 30-second telemetry windows.
 Pipeline: synthetic telemetry → windowed features → XGBoost → risk score → console alert.
 
-> Status: standard split P 0.998 / R 1.0 / F1 0.999 / AUC 1.0, and — after
+> Status: standard split P 1.0 / R 1.0 / F1 1.0 / AUC 1.0, and -- after
 > adding auth-heavy (`brute_force_attack`) and network-heavy (`c2_heavy_attack`)
-> scenarios — **LOSO now passes for all 6 held-out attacks** (worst F1@0.5 =
-> 0.9958). Scenario diversity forced the model onto shared behavioral features.
+> scenarios -- **LOSO now passes for all 6 held-out attacks** (F1@0.5 = 1.0
+> everywhere). Scenario diversity forced the model onto shared behavioral features.
 > `benign_high_entropy` FPR is 0.0. See `results/generalization_report.md`.
-> Guard/collector live-enforcement stack deliberately **not** merged (Windows-only
+> Telemetry regen is byte-identical (seeded event IDs). Guard/collector
+> live-enforcement stack deliberately **not** merged (Windows-only
 > + admin); see Limitations.
 
 ## Quickstart (Windows / Python 3.13)
@@ -82,13 +83,13 @@ is ~100x slower (47 s for 50 trees vs 0.14 s). Pinned in `train_model.py` and ev
 | metric | value |
 |---|---|
 | AUC | 1.0000 |
-| Precision / Recall / F1 @0.5 | 0.9980 / 1.0000 / 0.9990 |
-| Confusion | TN 221, FP 1, FN 0, TP 498 (test 720) |
+| Precision / Recall / F1 @0.5 | 1.0000 / 1.0000 / 1.0000 |
+| Confusion | TN 222, FP 0, FN 0, TP 498 (test 720) |
 | `metrics.json` | machine-readable gate for CI (`tests/golden/baseline_metrics.json`) |
 
 Top features (`results/feature_importance.csv`):
-`event_count 0.27`, `file_modify_count 0.25`, `file_rename_count 0.14`,
-`file_write_velocity 0.13`, `file_write_count 0.11`.
+`event_count 0.27`, `file_modify_count 0.23`, `file_rename_count 0.14`,
+`file_write_count 0.14`, `file_write_velocity 0.12`.
 Still 0.0: `persistence_key_count` (regex fixed, 874 hits in telemetry — the
 model just doesn't need it), `network_connection_count`, `failed_login_count`,
 … — the model generalizes via shared features (`event_count`,
@@ -100,8 +101,8 @@ model just doesn't need it), `network_connection_count`, `failed_login_count`,
 |---|---|---|---|---|---|---|
 | powershell_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | persistence_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.01 |
-| ransomware_like | 1.00 | 1.0 | 0.9917 | 0.9958 | 1.00 | 0.03 |
-| multi_stage_attack | 1.00 | 0.9959 | 1.0 | 0.9979 | 0.9979 | 0.05 |
+| ransomware_like | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
+| multi_stage_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | brute_force_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | c2_heavy_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 

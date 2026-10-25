@@ -41,7 +41,7 @@ alerts (incl. the missing high-entropy-writes item), Makefile + `tasks.ps1` +
 
 **C — Generalization, with a reversal.** With 6 scenarios LOSO failed at
 F1 = 0.0 on every held-out attack (disjoint indicators). After Batch B's
-diversity, LOSO passes all 6 folds at the default 0.5 (worst F1 0.9958) —
+diversity, LOSO passes all 6 folds at the default 0.5 (F1 1.0 on all 6 folds) —
 the model moved onto shared features. Protected by a LOSO recall gate test;
 verdict text in the report is now data-driven, not hardcoded.
 
@@ -53,17 +53,19 @@ while cross F1 looks high (0.83/0.67) — a base-rate illusion
 claims**; post-hoc mapping cannot replace a common sensor.
 
 **Final polish (this pass).** One-command `review` target; ASCII-safe +
-explicit-UTF-8 report writes (console showed `?` for em-dashes); dashboard
-changelog section (this page lists recent commits); this file.
+explicit-UTF-8 report writes (console showed `?` for em-dashes); deterministic
+telemetry regen (seeded event IDs replace `uuid4` — re-running the generator
+is byte-identical, e2e leaves a clean tree); dashboard changelog section
+(this page lists recent commits); this file.
 
 ## 3. Current numbers
 
 | check | result |
 |---|---|
-| standard split (720 test) | P 0.998 / R 1.0 / F1 0.999 / AUC 1.0 |
-| LOSO worst fold | F1 0.9958 (ransomware_like), rest 1.0 |
+| standard split (720 test) | P 1.0 / R 1.0 / F1 1.0 / AUC 1.0 |
+| LOSO worst fold | none -- all 6 folds F1 1.0 |
 | benign FPR | 0.0 |
-| CIC-MalMem (20k sample) | P 1.0 / R 0.9995 / F1 0.9998 / AUC 1.0 |
+| CIC-MalMem (full 58,596 rows) | P 0.9998 / R 1.0 / F1 0.9999 / AUC 1.0 |
 | unified cross-source | AUC 0.50 / 0.50 (chance) |
 | tests | 47 passed (44 fast + 3 e2e) |
 | demo | PASS (LOW / CRITICAL / CRITICAL) |

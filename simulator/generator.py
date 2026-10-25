@@ -1,6 +1,5 @@
 import json
 import random
-import uuid
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -44,7 +43,9 @@ def make_event(
     **kwargs,
 ):
     event = {
-        "event_id": str(uuid.uuid4()),
+        # Deterministic ID from the seeded RNG (not uuid4): regeneration is
+        # byte-identical, so the e2e regen test leaves a clean tree.
+        "event_id": f"{random.getrandbits(128):032x}",
         "timestamp": iso_time(timestamp),
         "host_id": host_id,
         "run_id": run_id,

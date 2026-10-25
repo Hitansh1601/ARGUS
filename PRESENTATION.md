@@ -28,7 +28,7 @@ Expect: `38+ passed` fast (`pytest -m "not e2e"`), e2e on demand (`pytest -m e2e
 python src/train_model.py
 ```
 
-Expect: `Precision 0.998 / Recall 1.0 / F1 0.999 / AUC 1.0`, 720 test windows.
+Expect: `Precision 1.0 / Recall 1.0 / F1 1.0 / AUC 1.0`, 720 test windows.
 Show: `results/argus_confusion_matrix.png`, `results/metrics.json` (CI gate),
 `results/feature_importance.csv` (event_count 0.27, file_modify 0.25, file_rename 0.14).
 
@@ -74,8 +74,8 @@ Then open `results/dashboard.html` (offline, embedded plots).
 
 Open `results/generalization_report.md`:
 
-- Standard split: AUC 1.0, F1 0.999.
-- LOSO: **all 6 held-out attacks detected at 0.5** (worst F1 0.9958).
+- Standard split: AUC 1.0, F1 1.0.
+- LOSO: **all 6 held-out attacks detected at 0.5** (F1 1.0 on all 6 folds).
   With the old 6-scenario simulator this was F1 = 0.0 everywhere — adding
   auth-heavy and C2-heavy scenarios forced shared-feature learning.
   Protected by the LOSO gate test (`test_generalization_contract.py`).
