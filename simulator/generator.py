@@ -18,10 +18,14 @@ SCENARIOS = [
     "persistence_attack",
     "ransomware_like",
     "multi_stage_attack",
+    "brute_force_attack",
+    "c2_heavy_attack",
 ]
 
 RUNS_PER_SCENARIO = 60
 WINDOW_SECONDS = 30
+# Thresholds shared with feature_engineering / risk_engine.
+HIGH_ENTROPY_DELTA_THRESHOLD = 1.0
 
 
 def iso_time(dt):
@@ -539,10 +543,10 @@ def generate_persistence(start, host, run_id, window_id):
 # RANSOMWARE-LIKE SIMULATION
 # ---------------------------------------------------------
 
-def generate_ransomware(start, host, run_id, window_id):
+def generate_ransomware(start, host, run_id, window_id, scenario_override=None):
     events = []
     label = 1
-    scenario = "ransomware_like"
+    scenario = scenario_override or "ransomware_like"
     phase = "IMPACT"
 
     events.append(
@@ -598,35 +602,42 @@ def generate_ransomware(start, host, run_id, window_id):
 # MULTI-STAGE ATTACK
 # ---------------------------------------------------------
 
+def _relabel(events, scenario):
+    for e in events:
+        e["scenario"] = scenario
+    return events
+
+
 def generate_multi_stage(start, host, run_id, window_id):
     events = []
+    target = "multi_stage_attack"
 
-    # Window 0-1: normal activity
+    # Window 0-1: normal activity (keep BENIGN phase, fix scenario label)
     if window_id < 2:
-        return generate_benign_normal(
+        return _relabel(generate_benign_normal(
             start,
             host,
             run_id,
             window_id
-        )
+        ), target)
 
     # Window 2: execution
     if window_id == 2:
-        return generate_powershell(
+        return _relabel(generate_powershell(
             start,
             host,
             run_id,
             window_id
-        )
+        ), target)
 
     # Window 3: persistence
     if window_id == 3:
-        return generate_persistence(
+        return _relabel(generate_persistence(
             start,
             host,
             run_id,
             window_id
-        )
+        ), target)
 
     # Window 4: C2-like behavior
     if window_id == 4:
@@ -667,13 +678,152 @@ def generate_multi_stage(start, host, run_id, window_id):
 
         return events
 
-    # Window 5: impact
+    # Window 5: impact (preserve multi-stage scenario label)
     return generate_ransomware(
         start,
         host,
         run_id,
         window_id,
+        scenario_override="multi_stage_attack",
     )
+
+
+# ---------------------------------------------------------
+# BRUTE-FORCE ATTACK (auth-heavy, gives failed_login signal)
+# ---------------------------------------------------------
+
+def generate_brute_force(start, host, run_id, window_id):
+    events = []
+    label = 1
+    scenario = "brute_force_attack"
+    phase = "ACCESS"
+
+    events.append(
+        process_event(
+            start + timedelta(seconds=2),
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "svchost.exe",
+            "explorer.exe",
+            2,
+            phase,
+        )
+    )
+
+    # 4-6 failed logins + 1 success (breach)
+    for i in range(random.randint(4, 6)):
+        events.append(
+            auth_event(
+                start + timedelta(seconds=3 + i * 3),
+                host,
+                run_id,
+                window_id,
+                scenario,
+                label,
+                "FAILURE",
+                phase,
+            )
+        )
+
+    events.append(
+        auth_event(
+            start + timedelta(seconds=24),
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "SUCCESS",
+            phase,
+        )
+    )
+
+    for _ in range(random.randint(1, 3)):
+        events.append(
+            network_event(
+                start + timedelta(seconds=random.randint(5, 28)),
+                host,
+                run_id,
+                window_id,
+                scenario,
+                label,
+                "svchost.exe",
+                random.randint(2, 6),
+                phase,
+            )
+        )
+
+    return events
+
+
+# ---------------------------------------------------------
+# C2-HEAVY ATTACK (network-heavy, gives network signal)
+# ---------------------------------------------------------
+
+def generate_c2_heavy(start, host, run_id, window_id):
+    events = []
+    label = 1
+    scenario = "c2_heavy_attack"
+    phase = "C2"
+
+    events.append(
+        process_event(
+            start + timedelta(seconds=2),
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "svchelper.exe",
+            "powershell.exe",
+            4,
+            phase,
+        )
+    )
+
+    # 8-12 beacon connections across distinct ports
+    for _ in range(random.randint(8, 12)):
+        ts = start + timedelta(seconds=random.randint(1, 29))
+        # Use network_event then override port for diversity
+        ev = network_event(
+            ts,
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "svchelper.exe",
+            random.randint(8, 12),
+            phase,
+        )
+        ev["destination_port"] = random.choice([443, 80, 53, 8080, 8443])
+        ev["destination_ip"] = random.choice([
+            "192.0.2.10",
+            "198.51.100.20",
+            "203.0.113.30",
+            "198.51.100.99",
+        ])
+        events.append(ev)
+
+    for _ in range(random.randint(1, 3)):
+        events.append(
+            file_event(
+                start + timedelta(seconds=random.randint(5, 29)),
+                host,
+                run_id,
+                window_id,
+                scenario,
+                label,
+                "create",
+                "txt",
+                phase,
+            )
+        )
+
+    return events
 
 
 def generate_run(scenario, run_number):
@@ -718,6 +868,16 @@ def generate_run(scenario, run_number):
 
         elif scenario == "multi_stage_attack":
             events = generate_multi_stage(
+                window_start, host_id, run_id, window_id
+            )
+
+        elif scenario == "brute_force_attack":
+            events = generate_brute_force(
+                window_start, host_id, run_id, window_id
+            )
+
+        elif scenario == "c2_heavy_attack":
+            events = generate_c2_heavy(
                 window_start, host_id, run_id, window_id
             )
 

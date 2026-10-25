@@ -21,6 +21,26 @@ OUTPUT_FILE = (
     / "argus_features.csv"
 )
 
+# Tunable constants (must stay in sync with simulator/generator.py
+# and src/risk_engine.py).
+WINDOW_SECONDS = 30
+HIGH_ENTROPY_DELTA_THRESHOLD = 1.0
+
+REQUIRED_COLUMNS = {"timestamp", "run_id", "host_id", "window_id"}
+
+
+def validate_schema(df):
+    """Fail fast with a helpful error if raw telemetry is malformed."""
+    missing = REQUIRED_COLUMNS - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Input telemetry missing required columns: {sorted(missing)}. "
+            "Did you run simulator/generator.py first?"
+        )
+    if df.empty:
+        raise ValueError("Input telemetry is empty (0 rows).")
+    return True
+
 
 def safe_mode(series, default="BENIGN"):
     values = series.dropna()
@@ -37,6 +57,8 @@ def safe_mode(series, default="BENIGN"):
 
 
 def build_features(df):
+    validate_schema(df)
+    df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
     # Numeric conversions
@@ -51,6 +73,8 @@ def build_features(df):
     ]
 
     for col in numeric_columns:
+        if col not in df.columns:
+            df[col] = 0
         df[col] = pd.to_numeric(
             df[col],
             errors="coerce"
@@ -211,7 +235,7 @@ def build_features(df):
     ].nunique()
 
     features["file_write_velocity"] = (
-        features["file_write_count"] / 30.0
+        features["file_write_count"] / float(WINDOW_SECONDS)
     )
 
     features["entropy_mean"] = grouped[
@@ -224,7 +248,7 @@ def build_features(df):
 
     features["high_entropy_write_count"] = grouped[
         "entropy_delta"
-    ].apply(lambda x: (x > 1.0).sum())
+    ].apply(lambda x: (x > HIGH_ENTROPY_DELTA_THRESHOLD).sum())
 
     # -----------------------------------------------------
     # Registry features
@@ -246,7 +270,7 @@ def build_features(df):
         "registry_key"
     ].apply(
         lambda x: x.fillna("").str.contains(
-            "CurrentVersion\\\\Run",
+            r"CurrentVersion\Run",
             regex=False
         ).sum()
     )

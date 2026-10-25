@@ -5,11 +5,11 @@ Everything below was verified passing.
 
 ## Tabs to keep open
 
-1. `simulator/generator.py:14` — 6 scenarios
-2. `src/feature_engineering.py:39` — `build_features()`, 30 window features
-3. `src/train_model.py:154` — XGBoost block (`hist`, `n_jobs=1`)
-4. `src/risk_engine.py:1` — probability → 0–100 + LOW/MED/HIGH/CRITICAL
-5. `src/argus_alert.py:102,158,221` — alert box, `pick_batch`, CLI
+1. `simulator/generator.py:14` — 8 scenarios
+2. `src/feature_engineering.py:39` — `build_features()`, 30 window features + `validate_schema()`
+3. `src/train_model.py:82` — `train_and_evaluate()` testable core (`hist`, `n_jobs=1`) + `metrics.json`
+4. `src/risk_engine.py:1` — WEIGHTS table + `explain_risk()` → 0–100 + LOW/MED/HIGH/CRITICAL
+5. `src/argus_alert.py` — `collect_evidence()`, alert box, `pick_batch`, batch/live/watch/JSON CLI
 6. `demo/malicious_similar_demo.py:1` — safe sample, no virus
 7. `results/dashboard.html` (browser)
 8. `results/generalization_report.md`, `results/real_validation_report.md`
@@ -20,7 +20,7 @@ Everything below was verified passing.
 python -m pytest -q
 ```
 
-Expect: `14 passed`.
+Expect: `38+ passed` fast (`pytest -m "not e2e"`), e2e on demand (`pytest -m e2e`).
 
 ## 1. Train (60s)
 
@@ -28,11 +28,11 @@ Expect: `14 passed`.
 python src/train_model.py
 ```
 
-Expect: `Precision/Recall/F1/AUC 1.0`, 540 test windows.
-Show: `results/argus_confusion_matrix.png`, `results/argus_roc_curve.png`,
-`results/feature_importance.csv` (powershell 0.36, event_count 0.25, file_rename 0.21).
+Expect: `Precision 0.998 / Recall 1.0 / F1 0.999 / AUC 1.0`, 720 test windows.
+Show: `results/argus_confusion_matrix.png`, `results/metrics.json` (CI gate),
+`results/feature_importance.csv` (event_count 0.27, file_modify 0.25, file_rename 0.14).
 
-Say: "Group-by-run split, no leakage."
+Say: "Group-by-run split, no leakage. `train_and_evaluate()` is unit-testable."
 
 ## 2. Safe malicious-similar demo (30s) — the implementation proof
 
@@ -60,7 +60,7 @@ python src/argus_alert.py --top 1 --json
 python src/argus_alert.py --live --limit 2 --threshold 0.5
 ```
 
-Expect: CRITICAL boxes, same data as JSON, `Live replay: 2/2160 above 0.50`.
+Expect: CRITICAL boxes, same data as JSON, `Live replay` over 2880 windows.
 
 ## 4. Dashboard (30s)
 
@@ -70,26 +70,26 @@ python src/dashboard.py
 
 Then open `results/dashboard.html` (offline, embedded plots).
 
-## 5. Honest limits (60s) — show saved reports, do NOT re-run
+## 5. Generalization — the headline result (60s)
 
-Do NOT run live (slow):
+Open `results/generalization_report.md`:
 
-- `python src/evaluate_generalization.py` — 5 trainings
-- `python src/validate_real.py` — 58,596 rows
+- Standard split: AUC 1.0, F1 0.999.
+- LOSO: **all 6 held-out attacks detected at 0.5** (worst F1 0.9958).
+  With the old 6-scenario simulator this was F1 = 0.0 everywhere — adding
+  auth-heavy and C2-heavy scenarios forced shared-feature learning.
+  Protected by the LOSO gate test (`test_generalization_contract.py`).
+- Benign FPR 0.0.
 
-Instead open:
+Open `results/real_validation_report.md`: CIC-MalMem F1 0.9999, but 0 shared
+columns with ARGUS features → side-by-side only, needs `features_v2`
+(Batch D, still open).
 
-- `results/generalization_report.md` — standard split 1.0, but LOSO
-  F1@0.5 = 0.0 on all held-out attacks; ransomware AUC 0.26 (inverted).
-  Benign FPR 0.0 → the gap is false negatives on novel attacks, not FPs.
-- `results/real_validation_report.md` — CIC-MalMem P 0.9998 / R 1.0 /
-  F1 0.9999, but 0 shared columns with ARGUS features → side-by-side
-  only, needs `features_v2`.
-- `results/threshold_tuning.png`, `results/loso_f1.png`,
-  `results/real_confusion_matrix.png`.
+Do NOT re-run live on stage: `evaluate_generalization.py` (7 trainings),
+`validate_real.py` full (58,596 rows) — show the saved reports.
 
-Say: "Perfect on seen patterns, fails on unseen styles — disjoint
-indicators. Fix: shared primitives + anomaly head."
+Say: "Diversity fixed transfer. Remaining waste: persistence/network/auth
+features still sit at 0.0 importance — prune or reweight next."
 
 ## If asked for code paths
 

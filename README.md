@@ -3,26 +3,33 @@
 ARGUS detects malicious endpoint behavior from 30-second telemetry windows.
 Pipeline: synthetic telemetry → windowed features → XGBoost → risk score → console alert.
 
-> Status: works perfectly on **seen** scenarios (AUC 1.0), **fails on unseen attack styles**
-> (LOSO F1@0.5 = 0.0 for all held-out attacks). See `results/generalization_report.md`.
-> `benign_high_entropy` does **not** cause false positives (FPR 0.0). The gap is
-> false *negatives* on novel attacks, not FPs.
+> Status: standard split P 0.998 / R 1.0 / F1 0.999 / AUC 1.0, and — after
+> adding auth-heavy (`brute_force_attack`) and network-heavy (`c2_heavy_attack`)
+> scenarios — **LOSO now passes for all 6 held-out attacks** (worst F1@0.5 =
+> 0.9958). Scenario diversity forced the model onto shared behavioral features.
+> `benign_high_entropy` FPR is 0.0. See `results/generalization_report.md`.
+> Guard/collector live-enforcement stack deliberately **not** merged (Windows-only
+> + admin); see Limitations.
 
 ## Quickstart (Windows / Python 3.13)
 
 ```powershell
 pip install -r requirements.txt
 
-# 1. Generate synthetic telemetry (6 scenarios x 60 runs x 6 windows)
+# 1. Generate synthetic telemetry (8 scenarios x 60 runs x 6 windows)
 python simulator/generator.py
 
-# 2. Build windowed features
+# 2. Build windowed features (validates schema, 30 features)
 python src/feature_engineering.py
 
-# 3. Train + evaluate (group-by-run split, no leakage)
+# 3. Train + evaluate (group-by-run split, no leakage; saves metrics.json)
 python src/train_model.py
+# fast variant without PNGs (for tests): python src/train_model.py --no-plots
 
-# 4. Generalization stress test (Task 1) — standard split, LOSO, threshold sweep, benign FPR
+# Windows shortcut for 1–3 + more: .\tasks.ps1 data / features / train
+# (Makefile mirrors the same targets for compat)
+
+# 4. Generalization stress test — standard split, LOSO (6 folds), threshold sweep, benign FPR
 python src/evaluate_generalization.py
 
 # 5. Fire a demo alert
@@ -36,8 +43,10 @@ python src/argus_alert.py --watch data/processed/argus_features.csv --interval 5
 python src/dashboard.py
 # open results/dashboard.html
 
-# 8. Tests + lint-ish check
+# 8. Tests (fast unit + slow e2e marked separately)
 pytest -q
+pytest -m "not e2e" -q   # fast (<30s)
+pytest -m e2e -q         # full regen + train gate
 ```
 
 ## How it works
@@ -46,60 +55,65 @@ pytest -q
 simulator/generator.py
   benign_normal, benign_high_entropy (label 0)
   powershell_attack, persistence_attack, ransomware_like, multi_stage_attack (label 1)
-  -> data/raw/synthetic/all_synthetic_telemetry.jsonl (52 MB, ~2.1k windows)
+  brute_force_attack (4-6 FAILURE + 1 SUCCESS logins), c2_heavy_attack (8-12 beacons)
+  -> data/raw/synthetic/all_synthetic_telemetry.jsonl (~74.5k events, 2880 windows)
 
 src/feature_engineering.py
   30 numeric window features: process / file+entropy / registry / network / auth / diversity
-  -> data/processed/argus_features.csv (2160 rows x 36 cols)
+  (validates schema; persistence regex fixed: CurrentVersion\Run now fires)
+  -> data/processed/argus_features.csv (2880 rows x 36 cols)
 
 src/train_model.py (XGBoost 250 trees, depth 5, lr 0.05, hist, n_jobs=1)
-  GroupShuffleSplit by run_id (25% test) -> results/argus_*.png, models/argus_xgboost.json
+  train_and_evaluate() testable core; GroupShuffleSplit by run_id (25% test)
+  -> results/metrics.json (CI gate + golden), results/argus_*.png, models/argus_xgboost.json
 
-src/risk_engine.py: p*60 + behavioral bonuses -> 0-100 + LOW/MEDIUM/HIGH/CRITICAL
-src/argus_alert.py: loads model, scores windows, prints alerts (batch/live/watch, JSON optional)
-src/evaluate_generalization.py: LOSO + threshold sweep + benign breakdown
+src/risk_engine.py: WEIGHTS table + explain_risk() -> 0-100 + LOW/MEDIUM/HIGH/CRITICAL
+src/argus_alert.py: collect_evidence() in parity with WEIGHTS; batch/live/watch, JSON optional
+src/evaluate_generalization.py: LOSO (6 folds) + threshold sweep + benign breakdown
 ```
 
 Why `n_jobs=1, tree_method="hist"`? On this Windows/OpenMP box `n_jobs>1`
 is ~100x slower (47 s for 50 trees vs 0.14 s). Pinned in `train_model.py` and eval.
 
-## Results (reproduced 2026-10-06, 2160 windows: 1320 malicious / 840 benign)
+## Results (8 scenarios, 2880 windows: 2160 malicious / 720 benign)
 
 ### Standard group split (seen scenarios)
 
 | metric | value |
 |---|---|
 | AUC | 1.0000 |
-| Precision / Recall / F1 @0.5 | 1.0 / 1.0 / 1.0 |
-| Confusion | TN 232, FP 0, FN 0, TP 308 |
-| Threshold sweep | every threshold 0.05–0.95 gives F1 1.0 (too separable) |
+| Precision / Recall / F1 @0.5 | 0.9980 / 1.0000 / 0.9990 |
+| Confusion | TN 221, FP 1, FN 0, TP 498 (test 720) |
+| `metrics.json` | machine-readable gate for CI (`tests/golden/baseline_metrics.json`) |
 
 Top features (`results/feature_importance.csv`):
-`powershell_count 0.36`, `event_count 0.25`, `file_rename_count 0.21`,
-`process_tree_depth 0.07`, `file_modify_count 0.06`.
-13/30 features have 0.0 importance (`persistence_key_count`,
-`network_connection_count`, `failed_login_count`, …) — simulator artifacts.
+`event_count 0.27`, `file_modify_count 0.25`, `file_rename_count 0.14`,
+`file_write_velocity 0.13`, `file_write_count 0.11`.
+Still 0.0: `persistence_key_count` (regex fixed, 874 hits in telemetry — the
+model just doesn't need it), `network_connection_count`, `failed_login_count`,
+… — the model generalizes via shared features (`event_count`,
+`signal_diversity`), not the scenario-specific ones.
 
-### Leave-one-attack-out (train without one attack, test on it + 30% benign holdout)
+### Leave-one-attack-out (train without one attack, test on it + benign holdout)
 
 | held-out | AUC | P@0.5 | R@0.5 | F1@0.5 | best F1 (tuned) | best thr |
 |---|---|---|---|---|---|---|
-| powershell_attack | 0.81 | 0.0 | 0.0 | 0.0 | 0.67 | 0.01 |
-| persistence_attack | 1.00 | 0.0 | 0.0 | 0.0 | 1.00 | 0.01 |
-| ransomware_like | 0.26 | 0.0 | 0.0 | 0.0 | 0.00 | — |
-| multi_stage_attack | 1.00 | 0.0 | 0.0 | 0.0 | 0.00 | — |
+| powershell_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
+| persistence_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.01 |
+| ransomware_like | 1.00 | 1.0 | 0.9917 | 0.9958 | 1.00 | 0.03 |
+| multi_stage_attack | 1.00 | 0.9959 | 1.0 | 0.9979 | 0.9979 | 0.05 |
+| brute_force_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
+| c2_heavy_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 
-Reading: at the default 0.5 threshold the model misses **every** unseen attack.
-Lowering the threshold rescues `persistence_attack` (ranking is perfect, just
-miscalibrated) and partly `powershell_attack`, but `ransomware_like` ranks
-*inverted* (AUC 0.26) — no threshold fixes it. Each attack uses disjoint
-indicators, so there is nothing shared to transfer.
+History worth stating in review: with 6 scenarios this table was 0.0 F1
+everywhere (disjoint indicators, nothing shared to transfer). Adding
+auth-heavy and C2-heavy scenarios forced shared-feature learning and fixed
+it — protected now by the LOSO gate in `tests/test_generalization_contract.py`.
 
 ### Benign false-positive check
 
-Standard test set: `benign_normal` FPR 0.0 (n=130), `benign_high_entropy`
-FPR 0.0 (n=102), at both 0.05 and 0.5. Compression/backup-like high entropy
-is **not** the problem.
+Standard test set FPR 0.0 for `benign_normal` and `benign_high_entropy`.
+Compression/backup-like high entropy is **not** the problem.
 
 ### Real-data baseline (`argus_baseline.py`, CIC-MalMem-2022)
 
@@ -113,22 +127,25 @@ transfer without a feature map; see `results/real_validation_report.md`
 
 ```
 argus_baseline.py              CIC-MalMem baseline (real data)
-simulator/generator.py         synthetic telemetry generator
-src/feature_engineering.py     windowed feature builder
-src/train_model.py             XGBoost training + plots
-src/risk_engine.py             p -> 0-100 risk + severity
-src/argus_alert.py             batch / live / watch alerting (argparse, JSON)
-src/evaluate_generalization.py LOSO + threshold + benign FPR
-src/validate_real.py           real-data side-by-side (Task 4)
+simulator/generator.py         synthetic telemetry generator (8 scenarios)
+src/feature_engineering.py     windowed feature builder (+validate_schema)
+src/train_model.py             train_and_evaluate() core + CLI + metrics.json
+src/risk_engine.py             WEIGHTS table + explain_risk() -> 0-100 score
+src/argus_alert.py             batch / live / watch alerting + collect_evidence()
+src/evaluate_generalization.py LOSO (6 folds) + threshold + benign FPR
+src/validate_real.py           real-data side-by-side
 src/config.py + config.yaml    central paths/hyperparams/thresholds
 src/dashboard.py               static HTML dashboard generator
-dashboard/                     (generated) results/dashboard.html
-tests/                         pytest: features, risk, alert-import, generalization contract
-data/raw/synthetic/            generator output (gitignored if large)
-data/processed/argus_features.csv
+demo/malicious_similar_demo.py safe reviewer demo (no virus)
+Makefile + tasks.ps1           Windows-friendly task runners
+pytest.ini + tests/golden/     e2e markers + metric gate
+tests/                         40+ tests: features, risk, alert, generator, train, LOSO gate
+data/raw/synthetic/            generator output (8 jsonl + combined)
+data/processed/argus_features.csv  (2880 rows)
 models/argus_xgboost.json
 results/                       confusion, ROC, importance, threshold_tuning, loso_f1,
-                               generalization_report.{json,md}, real_validation_report.md
+                               metrics.json, generalization_report.{json,md},
+                               real_validation_report.{json,md}
 ```
 
 ## Configuration
@@ -140,14 +157,19 @@ defaults so they run even without the config file.
 
 ## Limitations → roadmap
 
-1. **No cross-attack generalization** (proven above). Fix: shared behavioral
-   primitives (entropy velocity, rarity, graph features) + anomaly/OOD head +
-   leave-one-scenario-out in CI with a minimum-recall gate.
-2. **Dead features** (13919 zeros). Prune or make simulator emit overlapping
-   signals (e.g. persistence + network in the same run).
-3. **Calibration**: default 0.5 is arbitrary; persist a tuned threshold
-   (`results/generalization_report.json: best_f1`) into `config.yaml`.
-4. **Real telemetry**: unify CIC-MalMem and ARGUS windows behind one
-   `features_v2` schema before claiming real-world performance.
-5. **Ops**: current dashboard is static HTML; next is streaming ingest
-   (watch dir / Kafka) + alert dedup + analyst feedback loop.
+1. **Dead features that stay dead** (`persistence_key_count`,
+   `network_connection_count`, `failed_login_count` at 0.0 even though the
+   telemetry now contains 874 persistence hits, brute-force logins, C2
+   beacons). LOSO passes anyway via shared features, but these signals are
+   wasted. Fix: prune them or reweight the simulator so they carry unique
+   information (Batch C remainder).
+2. **Calibration**: default 0.5 holds (tuned 0.05–0.10 gives the same F1 here);
+   threshold stays in `config.yaml: alerting.threshold` and `metrics.json`.
+3. **Real telemetry**: unify CIC-MalMem and ARGUS windows behind one
+   `features_v2` schema before claiming real-world performance (Batch D).
+4. **Live enforcement deliberately deferred**: the `argus-improvements`
+   guard/collector/nightly-retrain stack (`src/guard.py`,
+   `src/collector_windows.py`, Sysmon XML) is Windows-only + admin-gated.
+   Adopt only on a Windows admin review box.
+5. **Ops**: dashboard is static HTML; next is streaming ingest
+   (watch dir) + alert dedup + analyst feedback loop.

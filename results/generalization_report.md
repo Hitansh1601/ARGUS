@@ -1,44 +1,52 @@
 # ARGUS generalization report
 
-Standard group split: AUC=1.0000, P=1.0000 R=1.0000 F1=1.0000 @0.5 (train=1620, test=540)
-Best threshold by F1: 0.05 (P=1.0000 R=1.0000 F1=1.0000)
-Best threshold by Youden J: 0.05 (J=1.0000)
+Standard group split: AUC=1.0000, P=0.9980 R=1.0000 F1=0.9990 @0.5 (train=2160, test=720)
+Best threshold by F1: 0.05 (P=0.9980 R=1.0000 F1=0.9990)
+Best threshold by Youden J: 0.05 (J=0.9955)
 
 ## Leave-one-attack-out (test = held-out attack + 30% benign holdout)
 
 | held-out | AUC | P@0.5 | R@0.5 | F1@0.5 | bestF1 | bestThr | n_test |
 |---|---|---|---|---|---|---|---|
-| powershell_attack | 0.8103 | 0.0000 | 0.0000 | 0.0000 | 0.6656 | 0.01 | 668 |
-| persistence_attack | 1.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 0.01 | 668 |
-| ransomware_like | 0.2641 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.01 | 668 |
-| multi_stage_attack | 1.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.01 | 308 |
+| powershell_attack | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.03 | 576 |
+| persistence_attack | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.01 | 576 |
+| ransomware_like | 1.0000 | 1.0000 | 0.9917 | 0.9958 | 1.0000 | 0.03 | 576 |
+| multi_stage_attack | 1.0000 | 0.9959 | 1.0000 | 0.9979 | 0.9979 | 0.05 | 576 |
+| brute_force_attack | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.03 | 576 |
+| c2_heavy_attack | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.03 | 576 |
 
-> Conclusion: standard split is perfect but LOSO fails even at the best
-> threshold. Each attack uses disjoint indicators, so the model cannot
-> transfer. Next fix: shared behavioral features + anomaly head.
+> LOSO passes: every held-out attack is detected at the default 0.5 threshold (worst F1@0.5=0.9958). Scenario diversity (8 scenarios incl. brute-force auth and C2 beacons) forced the model onto shared behavioral features instead of disjoint indicators. Keep the LOSO gate in CI to catch regressions.
 
 
 ## Benign FPR (standard test set)
 
-- benign_normal (n=130): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
 - benign_high_entropy (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_all (n=232): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=204): fpr@0.05=0.0000, fpr@0.5=0.0000
 
 ## Benign FPR inside each LOSO test set
 
 ### held-out=powershell_attack
-- benign_normal (n=140): fpr@0.05=0.0071, fpr@0.5=0.0071
-- benign_high_entropy (n=108): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_all (n=248): fpr@0.05=0.0040, fpr@0.5=0.0040
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000
 ### held-out=persistence_attack
-- benign_normal (n=140): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_high_entropy (n=108): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_all (n=248): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000
 ### held-out=ransomware_like
-- benign_normal (n=140): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_high_entropy (n=108): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_all (n=248): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000
 ### held-out=multi_stage_attack
-- benign_normal (n=140): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_high_entropy (n=108): fpr@0.05=0.0000, fpr@0.5=0.0000
-- benign_all (n=248): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000
+### held-out=brute_force_attack
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000
+### held-out=c2_heavy_attack
+- benign_normal (n=102): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_high_entropy (n=114): fpr@0.05=0.0000, fpr@0.5=0.0000
+- benign_all (n=216): fpr@0.05=0.0000, fpr@0.5=0.0000

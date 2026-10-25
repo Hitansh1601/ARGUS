@@ -19,7 +19,7 @@ def load():
 def test_report_structure():
     r = load()
     assert "standard_group_split" in r
-    assert "loso" in r and len(r["loso"]) == 4
+    assert "loso" in r and len(r["loso"]) == 6
     assert "threshold_sweep" in r and len(r["threshold_sweep"]) > 5
     for entry in r["loso"]:
         assert "held_out" in entry and "at_0.5" in entry and "best_thresh_f1" in entry
@@ -46,3 +46,14 @@ def test_config_exists_and_sane():
     assert cfg["model"]["n_jobs"] == 1
     assert cfg["model"]["tree_method"] == "hist"
     assert 0 < cfg["alerting"]["threshold"] < 1
+
+
+def test_loso_gate_no_unseen_attack_missed():
+    # Regression gate for the generalization finding: every held-out
+    # attack scenario must be detected at the default threshold.
+    # (With 6 scenarios this failed at F1=0.0; 8-scenario diversity fixed it.)
+    r = load()
+    for entry in r["loso"]:
+        assert entry["auc"] >= 0.90, f"{entry['held_out']} AUC={entry['auc']}"
+        f1 = entry["at_0.5"]["f1"]
+        assert f1 >= 0.90, f"{entry['held_out']} F1@0.5={f1}"

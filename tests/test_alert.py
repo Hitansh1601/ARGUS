@@ -51,3 +51,21 @@ def test_load_model_missing_raises():
         assert False, "should raise"
     except FileNotFoundError:
         pass
+
+def test_evidence_parity_with_risk():
+    from argus_alert import collect_evidence
+    row = {
+        "powershell_count": 1, "cmd_count": 1,
+        "suspicious_parent_child_count": 1, "file_write_velocity": 2.0,
+        "high_entropy_write_count": 10, "entropy_delta_mean": 2.0,
+        "persistence_key_count": 1, "network_connection_count": 10,
+        "failed_login_count": 5,
+    }
+    ev = collect_evidence(row)
+    assert len(ev) == 9, f"expected 9 evidence items, got {ev}"
+    assert any("High-entropy" in e for e in ev)
+
+
+def test_evidence_empty():
+    from argus_alert import collect_evidence
+    assert collect_evidence({}) == ["No strong behavioral indicators"]

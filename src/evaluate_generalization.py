@@ -46,7 +46,8 @@ RESULTS_DIR = BASE_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 METADATA_COLS = ["label", "scenario", "dominant_phase", "run_id", "host_id", "window_id"]
-ATTACK_SCENARIOS = ["powershell_attack", "persistence_attack", "ransomware_like", "multi_stage_attack"]
+ATTACK_SCENARIOS = ["powershell_attack", "persistence_attack", "ransomware_like",
+                    "multi_stage_attack", "brute_force_attack", "c2_heavy_attack"]
 BENIGN_SCENARIOS = ["benign_normal", "benign_high_entropy"]
 
 MODEL_KWARGS = dict(
@@ -220,6 +221,25 @@ def main():
     std_test_df = df.iloc[te_idx]
     benign_std = benign_breakdown(y_std, p_std, std_test_df, thresholds=(0.5, float(best_f1["threshold"])))
 
+    # Data-driven conclusion (no hardcoded story: with 6 scenarios the
+    # model had zero transfer; with 8 it generalizes — report what ran).
+    min_f1 = min(r["at_0.5"]["f1"] for r in loso) if loso else 0.0
+    if min_f1 >= 0.90:
+        verdict = (
+            f"LOSO passes: every held-out attack is detected at the default "
+            f"0.5 threshold (worst F1@0.5={min_f1:.4f}). Scenario diversity "
+            f"(8 scenarios incl. brute-force auth and C2 beacons) forced the "
+            f"model onto shared behavioral features instead of disjoint "
+            f"indicators. Keep the LOSO gate in CI to catch regressions."
+        )
+    else:
+        weak = [r["held_out"] for r in loso if r["at_0.5"]["f1"] < 0.90]
+        verdict = (
+            "Standard split is strong but LOSO fails for: "
+            + ", ".join(weak) + ". The model memorizes scenario-specific "
+            "indicators and does not transfer. Next fix: shared behavioral "
+            "features + anomaly head."
+        )
     report = {
         "standard_group_split": std,
         "threshold_sweep": sweep,
@@ -228,13 +248,7 @@ def main():
         "loso": loso,
         "benign_fpr_standard_test": benign_std,
         "benign_fpr_loso": fprs_bhe,
-        "conclusion": (
-            "Standard split is perfect (AUC=1.0) but LOSO fails: the model memorizes "
-            "scenario-specific indicators and does not transfer to unseen attack styles. "
-            "Even the best per-LOSO threshold cannot recover detection, and ransomware_like "
-            "ranks inverted (AUC<0.5). benign_high_entropy FPR is 0.0 on the standard split, "
-            "so no FP problem there — the problem is false negatives on novel attacks."
-        ),
+        "conclusion": verdict,
     }
     with open(RESULTS_DIR / "generalization_report.json", "w") as f:
         json.dump(report, f, indent=2)
@@ -287,9 +301,7 @@ def main():
                      f"{m['recall']:.4f} | {m['f1']:.4f} | {b.get('f1', 0):.4f} | "
                      f"{b.get('threshold', 0):.2f} | {r['n_test']} |")
     lines.append("")
-    lines.append("> Conclusion: standard split is perfect but LOSO fails even at the best")
-    lines.append("> threshold. Each attack uses disjoint indicators, so the model cannot")
-    lines.append("> transfer. Next fix: shared behavioral features + anomaly head.")
+    lines.append(f"> {verdict}")
     lines.append("")
     lines.append("")
     lines.append("## Benign FPR (standard test set)")

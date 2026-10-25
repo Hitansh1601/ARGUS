@@ -1,9 +1,9 @@
 # Real-data validation (Task 4): CIC-MalMem-2022 vs synthetic ARGUS
 
-Real rows=58596, features=55, label=Class.
-Real: P=0.9998 R=1.0000 F1=0.9999 AUC=1.0000 (TN=5859 FP=1 FN=0 TP=5860)
+Real rows=20000, features=55, label=Class.
+Real: P=1.0000 R=0.9995 F1=0.9998 AUC=1.0000 (TN=1994 FP=0 FN=1 TP=2005)
 
-Synthetic (standard split): AUC=1.0000, F1@0.5=1.0000 (see generalization_report.md for LOSO collapse).
+Synthetic (standard split): AUC=1.0000, F1@0.5=0.9990 (see generalization_report.md for LOSO collapse).
 
 ## Why no direct transfer
 

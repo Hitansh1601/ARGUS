@@ -99,6 +99,55 @@ def score_all(model: XGBClassifier, df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def collect_evidence(row):
+    """Return evidence strings — kept in parity with risk_engine WEIGHTS."""
+    evidence = []
+
+    if row.get("powershell_count", 0) > 0:
+        evidence.append("PowerShell execution")
+
+    if row.get("cmd_count", 0) > 0:
+        evidence.append("Command shell execution")
+
+    if row.get("suspicious_parent_child_count", 0) > 0:
+        evidence.append("Suspicious process relationship")
+
+    if row.get("file_write_velocity", 0) > 1:
+        evidence.append(
+            f"High file-write velocity "
+            f"({row['file_write_velocity']:.2f}/sec)"
+        )
+
+    if row.get("high_entropy_write_count", 0) > 5:
+        evidence.append(
+            f"High-entropy writes "
+            f"({int(row['high_entropy_write_count'])})"
+        )
+
+    if row.get("entropy_delta_mean", 0) > 1:
+        evidence.append(
+            f"Significant entropy increase "
+            f"({row['entropy_delta_mean']:.2f})"
+        )
+
+    if row.get("persistence_key_count", 0) > 0:
+        evidence.append("Registry persistence activity")
+
+    if row.get("network_connection_count", 0) > 5:
+        evidence.append("Elevated network activity")
+
+    if row.get("failed_login_count", 0) > 3:
+        evidence.append(
+            "Multiple failed authentication attempts"
+        )
+
+    if not evidence:
+        evidence.append(
+            "No strong behavioral indicators"
+        )
+    return evidence
+
+
 def print_alert(row, probability, risk_score, severity):
     # ASCII borders on purpose: Windows cp1252 consoles crash on box-drawing chars.
     bar = "+" + "-" * 68 + "+"
@@ -116,25 +165,7 @@ def print_alert(row, probability, risk_score, severity):
     print(f"| Severity           : {severity:<46}|")
     print("|" + " " * 68 + "|")
     print("| Evidence:".ljust(69) + "|")
-    evidence = []
-    if row.get("powershell_count", 0) > 0:
-        evidence.append("PowerShell execution")
-    if row.get("cmd_count", 0) > 0:
-        evidence.append("Command shell execution")
-    if row.get("suspicious_parent_child_count", 0) > 0:
-        evidence.append("Suspicious process relationship")
-    if row.get("file_write_velocity", 0) > 1:
-        evidence.append(f"High file-write velocity ({row['file_write_velocity']:.2f}/sec)")
-    if row.get("entropy_delta_mean", 0) > 1:
-        evidence.append(f"Significant entropy increase ({row['entropy_delta_mean']:.2f})")
-    if row.get("persistence_key_count", 0) > 0:
-        evidence.append("Registry persistence activity")
-    if row.get("network_connection_count", 0) > 5:
-        evidence.append("Elevated network activity")
-    if row.get("failed_login_count", 0) > 3:
-        evidence.append("Multiple failed authentication attempts")
-    if not evidence:
-        evidence.append("No strong behavioral indicators")
+    evidence = collect_evidence(row)
     for item in evidence:
         print(f"|  * {item:<64}|")
     print("|" + " " * 68 + "|")
