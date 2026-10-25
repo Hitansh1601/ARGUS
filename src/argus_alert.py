@@ -100,7 +100,7 @@ def score_all(model: XGBClassifier, df: pd.DataFrame) -> pd.DataFrame:
 
 
 def collect_evidence(row):
-    """Return evidence strings — kept in parity with risk_engine WEIGHTS."""
+    """Return evidence strings -- kept in parity with risk_engine WEIGHTS."""
     evidence = []
 
     if row.get("powershell_count", 0) > 0:
@@ -227,12 +227,12 @@ def run_live(scored: pd.DataFrame, threshold: float, limit: int, as_json: bool, 
         if delay > 0:
             time.sleep(delay)
     if len(hits) == 0:
-        log.warning("No windows above threshold %.2f — try --threshold 0.1 or --top N", threshold)
+        log.warning("No windows above threshold %.2f -- try --threshold 0.1 or --top N", threshold)
     return len(hits)
 
 
 def run_watch(data_path: Path, model: XGBClassifier, threshold: float, interval: int):
-    log.info("Watching %s every %ds (Ctrl+C to stop)…", data_path, interval)
+    log.info("Watching %s every %ds (Ctrl+C to stop)...", data_path, interval)
     seen = set()
     try:
         while True:

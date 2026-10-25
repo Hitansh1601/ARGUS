@@ -1,4 +1,4 @@
-"""Task 5: static HTML dashboard — no extra deps, single file output.
+"""Task 5: static HTML dashboard -- no extra deps, single file output.
 
 Reads results/*.json + *.png + *.csv and writes results/dashboard.html
 with embedded (base64) plots so it opens offline.
@@ -41,10 +41,28 @@ def load_json(p: Path) -> dict:
     return json.loads(p.read_text()) if p.exists() else {}
 
 
+def git_log(n: int = 10) -> str:
+    """Recent commits for the dashboard changelog (best-effort)."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["git", "log", f"-{n}", "--format=%h %ad %s", "--date=short"],
+            capture_output=True, text=True, timeout=15,
+            cwd=BASE_DIR,
+        )
+        lines = [ln for ln in out.stdout.splitlines() if ln.strip()]
+        if not lines:
+            return "<p><i>git history unavailable</i></p>"
+        items = "".join(f"<li><code>{html.escape(ln)}</code></li>\n" for ln in lines)
+        return f"<ol>\n{items}</ol>"
+    except Exception:
+        return "<p><i>git history unavailable</i></p>"
+
+
 def unified_table(uni: dict) -> str:
     rows = uni.get("protocols", [])
     if not rows:
-        return "<p><i>unified_report.json missing — run src/validate_unified.py</i></p>"
+        return "<p><i>unified_report.json missing -- run src/validate_unified.py</i></p>"
     trs = "".join(
         f"<tr><td>{html.escape(r['protocol'])}</td><td>{r['n_test']}</td>"
         f"<td>{r['f1']:.4f}</td><td>{r['roc_auc']:.4f}</td></tr>\n" for r in rows)
@@ -108,7 +126,7 @@ def main():
 {loso_rows}</table>
 <p><b>Reading:</b> @0.5 every unseen attack is missed. Threshold tuning rescues
 persistence (AUC 1.0, miscalibrated) and partly powershell, but ransomware ranks
-inverted (AUC 0.26) — no threshold fixes disjoint indicators.</p>
+inverted (AUC 0.26) -- no threshold fixes disjoint indicators.</p>
 <h2>Benign FPR (standard test)</h2>
 <table border=1 cellpadding=4><tr><th>slice</th><th>n</th><th>FPR@0.5</th></tr>
 {benign_rows}</table>
@@ -136,12 +154,14 @@ inverted (AUC 0.26) — no threshold fixes disjoint indicators.</p>
 <ul><li>results/generalization_report.md</li><li>results/real_validation_report.md</li>
 <li>results/unified_report.md</li>
 <li>config.yaml + src/config.py</li><li>pytest tests/</li></ul>
+<h2>Recent work (git log)</h2>
+{git_log()}
 """
     doc = ("<!doctype html><html><head><meta charset=utf-8><title>ARGUS dashboard</title>"
            "<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:2em auto;padding:0 1em}"
            "figure{margin:1em 0}figcaption{font-weight:bold}</style></head><body>"
            + body + "</body></html>")
-    out.write_text(doc)
+    out.write_text(doc, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", out, out.stat().st_size)
 
 

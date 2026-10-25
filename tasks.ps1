@@ -3,7 +3,7 @@
 #        .\tasks.ps1 test-fast | .\tasks.ps1 demo | .\tasks.ps1 dashboard
 param(
   [Parameter(Position=0)]
-  [ValidateSet('install','data','features','train','train-fast','alert','demo','dashboard','eval','validate','baseline','test','test-fast','test-e2e','clean')]
+  [ValidateSet('install','data','features','train','train-fast','alert','demo','dashboard','eval','validate','baseline','test','test-fast','test-e2e','review','clean')]
   [string]$Task = 'test-fast'
 )
 
@@ -34,5 +34,6 @@ switch ($Task) {
   'test'       { Invoke-Py @('-m','pytest','-v') }
   'test-fast'  { Invoke-Py @('-m','pytest','-m','not e2e','-v') }
   'test-e2e'   { Invoke-Py @('-m','pytest','-m','e2e','-v') }
+  'review'     { Invoke-Py @('-m','pytest','-m','not e2e','-q'); Invoke-Py @('demo/malicious_similar_demo.py'); Invoke-Py @('src/dashboard.py') }
   'clean'      { Invoke-Py @('-c','import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path(''.'').rglob(''__pycache__'')]; list(map(lambda p: p.unlink(missing_ok=True), pathlib.Path(''.'').rglob(''*.pyc'')))') }
 }

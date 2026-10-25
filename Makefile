@@ -1,4 +1,4 @@
-.PHONY: install data features train train-fast alert test test-fast test-e2e baseline demo dashboard eval validate clean
+.PHONY: install data features train train-fast alert test test-fast test-e2e baseline demo dashboard eval validate review clean
 
 # Windows 10+ primary: use .\tasks.ps1 <task>. Makefile kept for compat.
 # Use `python` (not `python3`) for Windows.
@@ -44,6 +44,11 @@ test-fast:
 
 test-e2e:
 	python -m pytest -m e2e -v
+
+review:
+	python -m pytest -m "not e2e" -q
+	python demo/malicious_similar_demo.py
+	python src/dashboard.py
 
 clean:
 	python -c "import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; list(map(lambda p: p.unlink(missing_ok=True), pathlib.Path('.').rglob('*.pyc')))"

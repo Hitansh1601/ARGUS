@@ -1,4 +1,4 @@
-"""Task 4: real-data validation — CIC-MalMem-2022 baseline vs synthetic ARGUS model.
+"""Task 4: real-data validation -- CIC-MalMem-2022 baseline vs synthetic ARGUS model.
 
 Same binary task (Benign=0 / Malicious=1) but DIFFERENT feature spaces,
 so this is a side-by-side comparison, not a direct transfer test.
@@ -44,7 +44,7 @@ def load_cic(sample: int, no_download: bool) -> pd.DataFrame:
     elif no_download:
         raise FileNotFoundError(f"No cached {CACHE} and --no-download set.")
     else:
-        log.info("Downloading CIC-MalMem-2022 (may take ~1 min)…")
+        log.info("Downloading CIC-MalMem-2022 (may take ~1 min)...")
         CACHE.parent.mkdir(parents=True, exist_ok=True)
         df = pd.read_csv(DATA_URL)
         df.to_csv(CACHE, index=False)
@@ -75,12 +75,12 @@ def main():
     drop = [label_col, "binary_label", "Category", "Class", "Filename"]
     X = df.drop(columns=[c for c in drop if c in df.columns], errors="ignore")
     X = X.select_dtypes(include=[np.number])
-    log.info("Real feature matrix: %d x %d (e.g. %s…)", *X.shape, list(X.columns[:5]))
+    log.info("Real feature matrix: %d x %d (e.g. %s...)", *X.shape, list(X.columns[:5]))
 
     Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     model = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
                           eval_metric="logloss", random_state=42, n_jobs=1, tree_method="hist")
-    log.info("Training real-data XGBoost…")
+    log.info("Training real-data XGBoost...")
     model.fit(Xtr, ytr)
     pred = model.predict(Xte)
     proba = model.predict_proba(Xte)[:, 1]
@@ -104,13 +104,13 @@ def main():
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
                 xticklabels=["Benign", "Malicious"], yticklabels=["Benign", "Malicious"])
-    plt.xlabel("Predicted"); plt.ylabel("Actual"); plt.title("CIC-MalMem-2022 — Confusion Matrix")
+    plt.xlabel("Predicted"); plt.ylabel("Actual"); plt.title("CIC-MalMem-2022 -- Confusion Matrix")
     plt.tight_layout(); plt.savefig(RESULTS / "real_confusion_matrix.png", dpi=150); plt.close()
     fpr, tpr, _ = roc_curve(yte, proba)
     plt.figure(figsize=(5, 4))
     plt.plot(fpr, tpr, label=f"AUC={metrics['roc_auc']:.3f}")
     plt.plot([0, 1], [0, 1], "--", color="gray")
-    plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title("CIC-MalMem-2022 — ROC")
+    plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title("CIC-MalMem-2022 -- ROC")
     plt.legend(); plt.tight_layout(); plt.savefig(RESULTS / "real_roc_curve.png", dpi=150); plt.close()
 
     # synthetic side
@@ -143,7 +143,7 @@ def main():
             "(process rarity, entropy velocity, persistence, C2 cadence)."
         ),
     }
-    (RESULTS / "real_validation_report.json").write_text(json.dumps(report, indent=2))
+    (RESULTS / "real_validation_report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     s = synth.get("at_0.5", {}) if isinstance(synth, dict) else {}
     md = [
@@ -161,9 +161,9 @@ def main():
         "## Why no direct transfer",
         "",
         f"- CIC features ({metrics['n_features']}): memory-forensics counters "
-        f"(`pslist.*`, `dlllist.*`, `handles.*`, …).",
+        f"(`pslist.*`, `dlllist.*`, `handles.*`, ...).",
         f"- ARGUS features ({len(synth_features)}): windowed behaviors "
-        f"(`powershell_count`, `file_write_velocity`, `entropy_delta_mean`, …).",
+        f"(`powershell_count`, `file_write_velocity`, `entropy_delta_mean`, ...).",
         f"- Shared column names: {overlap if overlap else 'none'}.",
         "- Same label semantics (Benign vs rest) but different sensors, "
         "different time granularity, different adversaries.",
@@ -177,7 +177,7 @@ def main():
         "Plots: `results/real_confusion_matrix.png`, `results/real_roc_curve.png`.",
         "Numbers: `results/real_validation_report.json`.",
     ]
-    (RESULTS / "real_validation_report.md").write_text("\n".join(md) + "\n")
+    (RESULTS / "real_validation_report.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     log.info("Wrote real_validation_report.{json,md}, real_confusion_matrix.png, real_roc_curve.png")
 
 

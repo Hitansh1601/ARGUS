@@ -7,8 +7,8 @@ Synthetic (standard split): AUC=1.0000, F1@0.5=0.9990 (see generalization_report
 
 ## Why no direct transfer
 
-- CIC features (55): memory-forensics counters (`pslist.*`, `dlllist.*`, `handles.*`, …).
-- ARGUS features (30): windowed behaviors (`powershell_count`, `file_write_velocity`, `entropy_delta_mean`, …).
+- CIC features (55): memory-forensics counters (`pslist.*`, `dlllist.*`, `handles.*`, ...).
+- ARGUS features (30): windowed behaviors (`powershell_count`, `file_write_velocity`, `entropy_delta_mean`, ...).
 - Shared column names: none.
 - Same label semantics (Benign vs rest) but different sensors, different time granularity, different adversaries.
 

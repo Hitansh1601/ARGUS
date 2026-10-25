@@ -77,8 +77,8 @@ def main():
         and float(scored.iloc[1]["_proba"]) >= 0.5
         and float(scored.iloc[2]["_proba"]) >= 0.5
     )
-    print("RESULT:", "PASS — benign LOW, both malicious-pattern windows CRITICAL"
-          if ok else "FAIL — unexpected scores (model/threshold changed?)")
+    print("RESULT:", "PASS -- benign LOW, both malicious-pattern windows CRITICAL"
+          if ok else "FAIL -- unexpected scores (model/threshold changed?)")
 
     if args.json:
         import json

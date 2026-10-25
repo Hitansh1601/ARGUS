@@ -222,7 +222,7 @@ def main():
     benign_std = benign_breakdown(y_std, p_std, std_test_df, thresholds=(0.5, float(best_f1["threshold"])))
 
     # Data-driven conclusion (no hardcoded story: with 6 scenarios the
-    # model had zero transfer; with 8 it generalizes — report what ran).
+    # model had zero transfer; with 8 it generalizes -- report what ran).
     min_f1 = min(r["at_0.5"]["f1"] for r in loso) if loso else 0.0
     if min_f1 >= 0.90:
         verdict = (
@@ -317,7 +317,7 @@ def main():
         for k, v in bd.items():
             keys = sorted([kk for kk in v if kk.startswith("fpr")])
             lines.append(f"- {k} (n={v['n']}): " + ", ".join(f"{kk}={v[kk]:.4f}" for kk in keys))
-    (RESULTS_DIR / "generalization_report.md").write_text("\n".join(lines) + "\n")
+    (RESULTS_DIR / "generalization_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     log.info("Wrote generalization_report.json/.md, threshold_tuning.png, loso_f1.png")
 

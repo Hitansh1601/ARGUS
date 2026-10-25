@@ -7,7 +7,7 @@ Example:
     (79.8, 'CRITICAL')
     # 0.98*60=58.8 + powershell 8 + velocity 5 + high_entropy 8 ... wait
     # entropy_delta 8 would be 87.8, but velocity/high_entropy/entropy
-    # overlap depends on row values — see WEIGHTS below.
+    # overlap depends on row values -- see WEIGHTS below.
 """
 
 PROB_WEIGHT = 60.0

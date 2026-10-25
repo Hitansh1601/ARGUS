@@ -7,7 +7,7 @@ Protocols (all XGBoost hist/1-job, same seed):
   D) cross cic->argus and argus->cic (train one source, test the other)
 
 Writes results/unified_report.{json,md}. Expectation set honestly in
-advance: with only 2 shared primitives, C ≈ single-source and D ≈ chance.
+advance: with only 2 shared primitives, C ~= single-source and D ~= chance.
 If D ever approaches C, the schema earned its keep.
 
 Usage: python src/validate_unified.py [--cic-sample 20000]
@@ -96,17 +96,17 @@ def main():
     verdict = (
         "v2 does not unify the domains: cross-source ranking is chance "
         f"({cross_str}; worst AUC={worst_auc:.3f}). The high cross F1 is a "
-        "base-rate illusion — both cross models predict all-positive "
+        "base-rate illusion -- both cross models predict all-positive "
         "(recall 1.0, precision = base rate). The two shared primitives "
         "carry within-source signal (argus-only AUC 0.82) but no "
         "transferable semantics. A common sensor is required; post-hoc "
         "mapping cannot create it."
         if worst_auc < 0.60 else
-        "v2 shows partial transfer — inspect per-protocol rows before claiming more."
+        "v2 shows partial transfer -- inspect per-protocol rows before claiming more."
     )
     (RESULTS / "unified_report.json").write_text(
         json.dumps({"features": V2_FEATURES, "gaps": gaps,
-                    "protocols": rows, "verdict": verdict}, indent=2))
+                    "protocols": rows, "verdict": verdict}, indent=2), encoding="utf-8")
     md = ["# Unified v2 validation (Batch D)", "",
           f"Shared primitives: {', '.join(V2_FEATURES)}. "
           f"Rows: argus={len(argus)}, cic={len(cic)} (sample={args.cic_sample}).", "",
@@ -119,7 +119,7 @@ def main():
            "Gaps (one side only):",
            f"- argus-only: {', '.join(gaps['argus_only'])}",
            f"- cic-only: {', '.join(gaps['cic_only'])}"]
-    (RESULTS / "unified_report.md").write_text("\n".join(md) + "\n")
+    (RESULTS / "unified_report.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     for r in rows:
         log.info("%-22s F1=%.4f AUC=%.4f (n=%d)", r["protocol"], r["f1"], r["roc_auc"], r["n_test"])
     log.info("Wrote results/unified_report.{json,md}")

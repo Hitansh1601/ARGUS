@@ -12,7 +12,7 @@ Shared primitives: process_count, hidden_artifact. Rows: argus=2880, cic=20000 (
 | C joint->argus-slice | 720 | 0.8070 | 1.0000 | 0.8932 | 0.8244 |
 | C joint->cic-slice | 5000 | 0.8404 | 0.4011 | 0.5430 | 0.7038 |
 
-> v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.829/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion — both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it.
+> v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.829/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion -- both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it.
 
 Gaps (one side only):
 - argus-only: file_write_velocity, entropy_delta_mean, persistence_key_count, failed_login_count, network_connection_count

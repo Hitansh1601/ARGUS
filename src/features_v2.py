@@ -4,7 +4,7 @@ Honest scope: the two sources share almost no sensors (memory-forensics
 counters vs 30-s endpoint behaviors). v2 therefore defines the small set of
 primitives measurable in BOTH, with explicit per-source extractor rules, and
 documents everything else as a gap. The point of v2 is to make the
-unification claim *testable* (see src/validate_unified.py) — not to pretend
+unification claim *testable* (see src/validate_unified.py) -- not to pretend
 post-hoc column renaming unifies the domains.
 
 Shared primitives (v2.0):
@@ -17,7 +17,7 @@ Shared primitives (v2.0):
   label           0/1    # 0 benign, 1 malicious (same rule both sides)
   source          str    # 'cic' | 'argus' (for per-source breakdowns)
 
-Known gaps (measurable one side only, NOT in v2 — common sensor needed):
+Known gaps (measurable one side only, NOT in v2 -- common sensor needed):
   file/entropy velocity, registry Run persistence, auth pressure,
   network beaconing (ARGUS-only); malfind injections detail, hidden
   process-table entries, driver/service anomalies (CIC-only).

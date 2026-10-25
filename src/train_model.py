@@ -207,7 +207,7 @@ def main(test_size=TEST_SIZE, seed=RANDOM_STATE, threshold=THRESHOLD, no_plots=F
     )
 
     # Save machine-readable metrics for CI gates.
-    with open(RESULTS_DIR / "metrics.json", "w") as f:
+    with open(RESULTS_DIR / "metrics.json", "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
     print(f"Saved {RESULTS_DIR / 'metrics.json'}")
 
