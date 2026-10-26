@@ -26,11 +26,11 @@
   "protocols": [
     {
       "protocol": "A argus-only",
-      "n_test": 720,
-      "precision": 0.8108108108108109,
+      "n_test": 810,
+      "precision": 0.8310249307479224,
       "recall": 1.0,
-      "f1": 0.8955223880597015,
-      "roc_auc": 0.8314985994397759
+      "f1": 0.9077155824508321,
+      "roc_auc": 0.8278095238095238
     },
     {
       "protocol": "B cic-only",
@@ -42,18 +42,18 @@
     },
     {
       "protocol": "C joint->joint",
-      "n_test": 5720,
-      "precision": 0.827113062568606,
-      "recall": 0.4995028173682466,
-      "f1": 0.6228559619756148,
-      "roc_auc": 0.7378778241585999
+      "n_test": 5810,
+      "precision": 0.8329853862212944,
+      "recall": 0.5136787898294174,
+      "f1": 0.6354768066892296,
+      "roc_auc": 0.741789838586053
     },
     {
       "protocol": "D cross cic->argus",
-      "n_test": 720,
-      "precision": 0.7083333333333334,
+      "n_test": 810,
+      "precision": 0.7407407407407407,
       "recall": 1.0,
-      "f1": 0.8292682926829268,
+      "f1": 0.851063829787234,
       "roc_auc": 0.5
     },
     {
@@ -66,20 +66,20 @@
     },
     {
       "protocol": "C joint->argus-slice",
-      "n_test": 720,
-      "precision": 0.8108108108108109,
+      "n_test": 810,
+      "precision": 0.8310249307479224,
       "recall": 1.0,
-      "f1": 0.8955223880597015,
-      "roc_auc": 0.831498599439776
+      "f1": 0.9077155824508321,
+      "roc_auc": 0.8278095238095238
     },
     {
       "protocol": "C joint->cic-slice",
       "n_test": 5000,
-      "precision": 0.8417085427135679,
-      "recall": 0.4007177033492823,
-      "f1": 0.5429497568881686,
-      "roc_auc": 0.7037636865401502
+      "precision": 0.8436974789915966,
+      "recall": 0.4003189792663477,
+      "f1": 0.5429962141698216,
+      "roc_auc": 0.7018725471748831
     }
   ],
-  "verdict": "v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.829/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion -- both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it."
+  "verdict": "v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.851/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion -- both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it."
 }

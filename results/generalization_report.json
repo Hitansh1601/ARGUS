@@ -6,14 +6,14 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0
     },
-    "n_train": 2160,
-    "n_test": 720
+    "n_train": 2430,
+    "n_test": 810
   },
   "threshold_sweep": [
     {
@@ -21,10 +21,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -33,10 +33,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -45,10 +45,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -57,10 +57,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -69,10 +69,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -81,10 +81,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -93,10 +93,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -105,10 +105,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -117,10 +117,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -129,10 +129,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -141,10 +141,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -153,10 +153,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -165,10 +165,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -177,10 +177,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -189,10 +189,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -201,10 +201,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -213,10 +213,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -225,10 +225,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     },
@@ -237,10 +237,10 @@
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tn": 222,
+      "tn": 236,
       "fp": 0,
       "fn": 0,
-      "tp": 498,
+      "tp": 574,
       "fpr": 0.0,
       "youden_j": 1.0
     }
@@ -250,10 +250,10 @@
     "precision": 1.0,
     "recall": 1.0,
     "f1": 1.0,
-    "tn": 222,
+    "tn": 236,
     "fp": 0,
     "fn": 0,
-    "tp": 498,
+    "tp": 574,
     "fpr": 0.0,
     "youden_j": 1.0
   },
@@ -262,17 +262,17 @@
     "precision": 1.0,
     "recall": 1.0,
     "f1": 1.0,
-    "tn": 222,
+    "tn": 236,
     "fp": 0,
     "fn": 0,
-    "tp": 498,
+    "tp": 574,
     "fpr": 0.0,
     "youden_j": 1.0
   },
   "loso": [
     {
       "held_out": "powershell_attack",
-      "n_train": 2304,
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
@@ -303,7 +303,7 @@
     },
     {
       "held_out": "persistence_attack",
-      "n_train": 2304,
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
@@ -334,7 +334,7 @@
     },
     {
       "held_out": "ransomware_like",
-      "n_train": 2304,
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
@@ -342,12 +342,12 @@
       "at_0.5": {
         "threshold": 0.5,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0,
+        "recall": 0.9833333333333333,
+        "f1": 0.9915966386554622,
         "tn": 216,
         "fp": 0,
-        "fn": 0,
-        "tp": 360,
+        "fn": 6,
+        "tp": 354,
         "fpr": 0.0
       },
       "best_thresh_f1": {
@@ -365,7 +365,7 @@
     },
     {
       "held_out": "multi_stage_attack",
-      "n_train": 2304,
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
@@ -396,11 +396,11 @@
     },
     {
       "held_out": "brute_force_attack",
-      "n_train": 2304,
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
-      "auc": 0.9999999999999999,
+      "auc": 1.0,
       "at_0.5": {
         "threshold": 0.5,
         "precision": 1.0,
@@ -427,7 +427,38 @@
     },
     {
       "held_out": "c2_heavy_attack",
-      "n_train": 2304,
+      "n_train": 2664,
+      "n_test": 576,
+      "n_test_attack": 360,
+      "n_test_benign": 216,
+      "auc": 1.0,
+      "at_0.5": {
+        "threshold": 0.5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tn": 216,
+        "fp": 0,
+        "fn": 0,
+        "tp": 360,
+        "fpr": 0.0
+      },
+      "best_thresh_f1": {
+        "threshold": 0.03,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tn": 216,
+        "fp": 0,
+        "fn": 0,
+        "tp": 360,
+        "fpr": 0.0,
+        "youden_j": 1.0
+      }
+    },
+    {
+      "held_out": "low_slow_exfil",
+      "n_train": 2664,
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
@@ -459,14 +490,14 @@
   ],
   "benign_fpr_standard_test": {
     "benign_normal": {
-      "n": 102,
+      "n": 120,
       "fpr@0.5": 0.0,
       "fp@0.5": 0,
       "fpr@0.05": 0.0,
       "fp@0.05": 0
     },
     "benign_high_entropy": {
-      "n": 102,
+      "n": 84,
       "fpr@0.5": 0.0,
       "fp@0.5": 0,
       "fpr@0.05": 0.0,
@@ -618,7 +649,30 @@
         "fpr@0.05": 0.0,
         "fp@0.05": 0
       }
+    },
+    "low_slow_exfil": {
+      "benign_normal": {
+        "n": 102,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_high_entropy": {
+        "n": 114,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      },
+      "benign_all": {
+        "n": 216,
+        "fpr@0.5": 0.0,
+        "fp@0.5": 0,
+        "fpr@0.05": 0.0,
+        "fp@0.05": 0
+      }
     }
   },
-  "conclusion": "LOSO passes: every held-out attack is detected at the default 0.5 threshold (worst F1@0.5=1.0000). Scenario diversity (8 scenarios incl. brute-force auth and C2 beacons) forced the model onto shared behavioral features instead of disjoint indicators. Keep the LOSO gate in CI to catch regressions."
+  "conclusion": "LOSO passes: every held-out attack is detected at the default 0.5 threshold (worst F1@0.5=0.9916). Scenario diversity (8 scenarios incl. brute-force auth and C2 beacons) forced the model onto shared behavioral features instead of disjoint indicators. Keep the LOSO gate in CI to catch regressions."
 }

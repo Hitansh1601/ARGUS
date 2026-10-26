@@ -14,3 +14,5 @@ data/live/
 feedback.db*
 *.reg.bak
 results/feedback_review.csv
+# analyst feedback (operational, per-machine)
+results/feedback.csv

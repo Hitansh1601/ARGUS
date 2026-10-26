@@ -4,9 +4,9 @@ ARGUS detects malicious endpoint behavior from 30-second telemetry windows.
 Pipeline: synthetic telemetry → windowed features → XGBoost → risk score → console alert.
 
 > Status: standard split P 1.0 / R 1.0 / F1 1.0 / AUC 1.0, and -- after
-> adding auth-heavy (`brute_force_attack`) and network-heavy (`c2_heavy_attack`)
-> scenarios -- **LOSO now passes for all 6 held-out attacks** (F1@0.5 = 1.0
-> everywhere). Scenario diversity forced the model onto shared behavioral features.
+> adding auth-heavy (`brute_force_attack`), network-heavy (`c2_heavy_attack`)
+> and quiet (`low_slow_exfil`) scenarios -- **LOSO now passes for all 7 held-out attacks** (worst F1@0.5 = 0.9916).
+> Scenario diversity forced the model onto shared behavioral features.
 > `benign_high_entropy` FPR is 0.0. See `results/generalization_report.md`.
 > Telemetry regen is byte-identical (seeded event IDs). Guard/collector
 > live-enforcement stack deliberately **not** merged (Windows-only
@@ -17,7 +17,7 @@ Pipeline: synthetic telemetry → windowed features → XGBoost → risk score �
 ```powershell
 pip install -r requirements.txt
 
-# 1. Generate synthetic telemetry (8 scenarios x 60 runs x 6 windows)
+# 1. Generate synthetic telemetry (9 scenarios x 60 runs x 6 windows)
 python simulator/generator.py
 
 # 2. Build windowed features (validates schema, 30 features)
@@ -30,7 +30,7 @@ python src/train_model.py
 # Windows shortcut for 1–3 + more: .\tasks.ps1 data / features / train
 # (Makefile mirrors the same targets for compat)
 
-# 4. Generalization stress test — standard split, LOSO (6 folds), threshold sweep, benign FPR
+# 4. Generalization stress test — standard split, LOSO (7 folds), threshold sweep, benign FPR
 python src/evaluate_generalization.py
 
 # 5. Fire a demo alert
@@ -56,14 +56,15 @@ pytest -m e2e -q         # full regen + train gate
 simulator/generator.py
   benign_normal, benign_high_entropy (label 0)
   powershell_attack, persistence_attack, ransomware_like, multi_stage_attack (label 1)
-  brute_force_attack (4-6 FAILURE + 1 SUCCESS logins), c2_heavy_attack (8-12 beacons)
-  -> data/raw/synthetic/all_synthetic_telemetry.jsonl (~74.5k events, 2880 windows)
+  brute_force_attack (4-6 FAILURE + 1 SUCCESS logins), c2_heavy_attack (8-12 beacons),
+  low_slow_exfil (1-2 quiet beacons/window, no write bursts)
+  -> data/raw/synthetic/all_synthetic_telemetry.jsonl (~75.6k events, 3240 windows)
 
 src/feature_engineering.py
   16 numeric model features (14 gain-0.0 pruned; raw signals kept for rules)
   + process / file+entropy / registry / network / auth / diversity raw aggregates
   (validates schema; persistence regex fixed: CurrentVersion\Run now fires)
-  -> data/processed/argus_features.csv (2880 rows x 22 cols)
+  -> data/processed/argus_features.csv (3240 rows x 22 cols)
 
 src/train_model.py (XGBoost 250 trees, depth 5, lr 0.05, hist, n_jobs=1)
   train_and_evaluate() testable core; GroupShuffleSplit by run_id (25% test)
@@ -71,13 +72,13 @@ src/train_model.py (XGBoost 250 trees, depth 5, lr 0.05, hist, n_jobs=1)
 
 src/risk_engine.py: WEIGHTS table + explain_risk() -> 0-100 + LOW/MEDIUM/HIGH/CRITICAL
 src/argus_alert.py: collect_evidence() in parity with WEIGHTS; batch/live/watch, JSON optional
-src/evaluate_generalization.py: LOSO (6 folds) + threshold sweep + benign breakdown
+src/evaluate_generalization.py: LOSO (7 folds) + threshold sweep + benign breakdown
 ```
 
 Why `n_jobs=1, tree_method="hist"`? On this Windows/OpenMP box `n_jobs>1`
 is ~100x slower (47 s for 50 trees vs 0.14 s). Pinned in `train_model.py` and eval.
 
-## Results (8 scenarios, 2880 windows: 2160 malicious / 720 benign)
+## Results (9 scenarios, 3240 windows: 2520 malicious / 720 benign)
 
 ### Standard group split (seen scenarios)
 
@@ -85,7 +86,7 @@ is ~100x slower (47 s for 50 trees vs 0.14 s). Pinned in `train_model.py` and ev
 |---|---|
 | AUC | 1.0000 |
 | Precision / Recall / F1 @0.5 | 1.0000 / 1.0000 / 1.0000 |
-| Confusion | TN 222, FP 0, FN 0, TP 498 (test 720) |
+| Confusion | TN 180, FP 0, FN 0, TP 630 (test 810) |
 | `metrics.json` | machine-readable gate for CI (`tests/golden/baseline_metrics.json`) |
 
 Top features (`results/feature_importance.csv`):
@@ -102,15 +103,16 @@ model just doesn't need it), `network_connection_count`, `failed_login_count`,
 |---|---|---|---|---|---|---|
 | powershell_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | persistence_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.01 |
-| ransomware_like | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
+| ransomware_like | 1.00 | 1.0 | 0.9833 | 0.9916 | 1.00 | 0.03 |
 | multi_stage_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | brute_force_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 | c2_heavy_attack | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
+| low_slow_exfil | 1.00 | 1.0 | 1.0 | 1.00 | 1.00 | 0.03 |
 
 History worth stating in review: with 6 scenarios this table was 0.0 F1
 everywhere (disjoint indicators, nothing shared to transfer). Adding
-auth-heavy and C2-heavy scenarios forced shared-feature learning and fixed
-it — protected now by the LOSO gate in `tests/test_generalization_contract.py`.
+auth-heavy, C2-heavy and quiet low-and-slow scenarios forced shared-feature
+learning and fixed it — protected now by the LOSO gate in `tests/test_generalization_contract.py`.
 
 ### Benign false-positive check
 
@@ -147,14 +149,14 @@ mapping cannot substitute for a common sensor.
 
 ```
 argus_baseline.py              CIC-MalMem baseline (real data)
-simulator/generator.py         synthetic telemetry generator (8 scenarios)
+simulator/generator.py         synthetic telemetry generator (9 scenarios)
 src/feature_engineering.py     windowed feature builder (+validate_schema)
 src/train_model.py             train_and_evaluate() core + CLI + metrics.json
 src/risk_engine.py             WEIGHTS table + explain_risk() -> 0-100 score
 src/schema.py                  model-feature gate (fail fast on skew)
 src/feedback.py                analyst label/list/stats -> results/feedback.csv
 src/argus_alert.py             batch / live / watch alerting + collect_evidence() (+schema gate)
-src/evaluate_generalization.py LOSO (6 folds) + threshold + benign FPR
+src/evaluate_generalization.py LOSO (7 folds) + threshold + benign FPR
 src/validate_real.py           real-data side-by-side
 src/config.py + config.yaml    central paths/hyperparams/thresholds
 src/dashboard.py               static HTML dashboard generator
@@ -165,7 +167,7 @@ Makefile + tasks.ps1           Windows-friendly task runners
 pytest.ini + tests/golden/     e2e markers + metric gate
 tests/                         40+ tests: features, risk, alert, generator, train, LOSO gate
 data/raw/synthetic/            generator output (8 jsonl + combined)
-data/processed/argus_features.csv  (2880 rows)
+data/processed/argus_features.csv  (3240 rows)
 models/argus_xgboost.json
 results/                       confusion, ROC, importance, threshold_tuning, loso_f1,
                                metrics.json, generalization_report.{json,md},
@@ -193,9 +195,11 @@ defaults so they run even without the config file.
    quantified negative (`src/features_v2.py`, `results/unified_report.md`):
    cross-source AUC 0.50 both ways. Next step needs a common sensor, not
    more mapping.
-4. **Analyst loop started, retrain-merge pending.** `src/feedback.py`
-   accumulates labels into `results/feedback.csv`; wiring it into
-   `train_model.py --extra-labeled` is the explicit next step.
+4. **Analyst loop closed (metric-gated).** `src/feedback.py label/list/stats`
+   accumulates labels into `results/feedback.csv`; `python src/train_model.py
+   --extra-labeled results/feedback.csv` merges them and refuses to overwrite
+   the deployed model unless the golden-baseline gate passes
+   (`--no-gate` bypasses, for experiments only).
 5. **Live enforcement deliberately deferred**: the `argus-improvements`
    guard/collector/nightly-retrain stack (`src/guard.py`,
    `src/collector_windows.py`, Sysmon XML) is Windows-only + admin-gated.

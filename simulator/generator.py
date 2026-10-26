@@ -19,6 +19,7 @@ SCENARIOS = [
     "multi_stage_attack",
     "brute_force_attack",
     "c2_heavy_attack",
+    "low_slow_exfil",
 ]
 
 RUNS_PER_SCENARIO = 60
@@ -384,6 +385,18 @@ def generate_powershell(start, host, run_id, window_id):
     scenario = "powershell_attack"
     phase = "EXECUTION"
 
+    # Tradecraft variation: rotating lures and shells. Exact-string
+    # detectors miss these; basename + family matching must not.
+    lure = random.choices(
+        ["WINWORD.EXE", "EXCEL.EXE", "OUTLOOK.EXE"],
+        weights=[0.6, 0.25, 0.15],
+    )[0]
+    shell = random.choices(
+        ["powershell.exe", "pwsh.exe", "powershell_ise.exe",
+         "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"],
+        weights=[0.6, 0.15, 0.1, 0.15],
+    )[0]
+
     events.append(
         process_event(
             start + timedelta(seconds=2),
@@ -392,7 +405,7 @@ def generate_powershell(start, host, run_id, window_id):
             window_id,
             scenario,
             label,
-            "WINWORD.EXE",
+            lure,
             "explorer.exe",
             2,
             phase,
@@ -407,8 +420,8 @@ def generate_powershell(start, host, run_id, window_id):
             window_id,
             scenario,
             label,
-            "powershell.exe",
-            "WINWORD.EXE",
+            shell,
+            lure,
             3,
             phase,
         )
@@ -423,7 +436,7 @@ def generate_powershell(start, host, run_id, window_id):
             scenario,
             label,
             "cmd.exe",
-            "powershell.exe",
+            shell,
             4,
             phase,
         )
@@ -438,7 +451,7 @@ def generate_powershell(start, host, run_id, window_id):
                 window_id,
                 scenario,
                 label,
-                "powershell.exe",
+                shell,
                 random.randint(5, 10),
                 phase,
             )
@@ -488,6 +501,11 @@ def generate_persistence(start, host, run_id, window_id):
     )
 
     for _ in range(random.randint(1, 3)):
+        # Run vs RunOnce rotation: exact "Run" string matching misses RunOnce.
+        run_key = random.choices(
+            ["CurrentVersion\\Run", "CurrentVersion\\RunOnce"],
+            weights=[0.7, 0.3],
+        )[0]
         events.append(
             make_event(
                 timestamp=start + timedelta(seconds=random.randint(5, 20)),
@@ -501,7 +519,7 @@ def generate_persistence(start, host, run_id, window_id):
                 process_name="powershell.exe",
                 registry_key=(
                     "HKCU\\Software\\Microsoft\\Windows\\"
-                    "CurrentVersion\\Run"
+                    + run_key
                 ),
                 registry_action="MODIFY",
             )
@@ -882,12 +900,81 @@ def generate_run(scenario, run_number):
                 window_start, host_id, run_id, window_id
             )
 
+        elif scenario == "low_slow_exfil":
+            events = generate_low_slow(
+                window_start, host_id, run_id, window_id
+            )
+
         else:
             events = []
 
         all_events.extend(events)
 
     return all_events
+
+
+# ---------------------------------------------------------
+# LOW-AND-SLOW EXFILTRATION (quiet campaign: below velocity
+# thresholds, sparse beacons, small bytes — tests the
+# network-interval and signal-diversity features)
+# ---------------------------------------------------------
+
+def generate_low_slow(start, host, run_id, window_id):
+    events = []
+    label = 1
+    scenario = "low_slow_exfil"
+    phase = "COLLECTION"
+
+    events.append(
+        process_event(
+            start + timedelta(seconds=2),
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "explorer.exe",
+            "winlogon.exe",
+            1,
+            phase,
+        )
+    )
+
+    # 1-2 beacons per window with long gaps (quiet, not bursty).
+    for offset in sorted(random.sample(range(1, 29), random.randint(1, 2))):
+        ev = network_event(
+            start + timedelta(seconds=offset),
+            host,
+            run_id,
+            window_id,
+            scenario,
+            label,
+            "explorer.exe",
+            random.randint(20, 28),
+            phase,
+        )
+        ev["destination_port"] = random.choice([443, 993, 995])
+        ev["bytes_sent"] = random.randint(40, 300)
+        ev["bytes_received"] = random.randint(40, 200)
+        events.append(ev)
+
+    # Occasional small read (staging), never a write burst.
+    if random.random() < 0.5:
+        events.append(
+            file_event(
+                start + timedelta(seconds=random.randint(5, 25)),
+                host,
+                run_id,
+                window_id,
+                scenario,
+                label,
+                "read",
+                "doc",
+                phase,
+            )
+        )
+
+    return events
 
 
 def main():

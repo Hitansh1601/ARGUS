@@ -140,7 +140,44 @@ def train_and_evaluate(df, test_size=TEST_SIZE, seed=RANDOM_STATE,
     return model, metrics, (X_test, y_test, probabilities, predictions)
 
 
-def main(test_size=TEST_SIZE, seed=RANDOM_STATE, threshold=THRESHOLD, no_plots=False):
+def merge_feedback(df, fb):
+    """Override labels with analyst labels from feedback.csv.
+
+    Returns (df, info). Rows whose (run_id, window_id) is absent from the
+    features are counted as missing, never invented.
+    """
+    df = df.copy()
+    fbk = fb.dropna(subset=["analyst_label"]).copy()
+    fbk["analyst_label"] = fbk["analyst_label"].astype(int)
+    on = ["run_id", "window_id"]
+    before = df["label"].copy()
+    df = df.merge(fbk[on + ["analyst_label"]], on=on, how="left")
+    hit = df["analyst_label"].notna()
+    df.loc[hit, "label"] = df.loc[hit, "analyst_label"].astype(int)
+    df = df.drop(columns=["analyst_label"])
+    fb_keys = set(map(tuple, fbk[on].itertuples(index=False, name=None)))
+    df_keys = set(map(tuple, df[on].itertuples(index=False, name=None)))
+    info = {"overridden": int(hit.sum()),
+            "missing": len(fb_keys - df_keys),
+            "flipped": int(((df["label"] != before) & hit).sum())}
+    return df, info
+
+
+GOLDEN_METRICS = BASE_DIR / "tests" / "golden" / "baseline_metrics.json"
+GATE_TOLERANCE = 0.05
+
+
+def check_gate(metrics, tolerance=GATE_TOLERANCE, golden_path=GOLDEN_METRICS):
+    """Failing metric names vs golden baseline (empty = pass)."""
+    if not Path(golden_path).exists():
+        return []
+    g = json.loads(Path(golden_path).read_text(encoding="utf-8"))
+    return [k for k in ("precision", "recall", "f1", "roc_auc")
+            if metrics[k] < g.get(k, 0.9) - tolerance]
+
+
+def main(test_size=TEST_SIZE, seed=RANDOM_STATE, threshold=THRESHOLD, no_plots=False,
+         extra_labeled=None, no_gate=False):
 
     if not INPUT_FILE.exists():
         raise FileNotFoundError(
@@ -155,6 +192,12 @@ def main(test_size=TEST_SIZE, seed=RANDOM_STATE, threshold=THRESHOLD, no_plots=F
     print(
         f"Total windows: {len(df):,}"
     )
+
+    if extra_labeled:
+        fb = pd.read_csv(extra_labeled)
+        df, info = merge_feedback(df, fb)
+        print(f"Merged analyst labels: {info['overridden']} overridden "
+              f"({info['flipped']} flipped), {info['missing']} feedback rows unmatched.")
 
     model, metrics, (X_test, y_test, probabilities, predictions) = (
         train_and_evaluate(df, test_size=test_size, seed=seed,
@@ -210,6 +253,17 @@ def main(test_size=TEST_SIZE, seed=RANDOM_STATE, threshold=THRESHOLD, no_plots=F
     with open(RESULTS_DIR / "metrics.json", "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
     print(f"Saved {RESULTS_DIR / 'metrics.json'}")
+
+    # Metric gate: never overwrite the deployed model with a worse one.
+    # metrics.json above is still written as an honest record of the run.
+    if not no_gate:
+        failed = check_gate(metrics)
+        if failed:
+            print(f"GATE FAILED on {failed} vs {GOLDEN_METRICS.name} "
+                  f"(tolerance {GATE_TOLERANCE}). Model NOT saved.")
+            print("=" * 60)
+            raise SystemExit(2)
+        print("Gate passed: metrics within tolerance of golden baseline.")
 
     if no_plots:
         # Still save model + importance CSV, skip PNGs for fast tests.
@@ -413,6 +467,12 @@ if __name__ == "__main__":
     parser.add_argument("--threshold", type=float, default=THRESHOLD)
     parser.add_argument("--no-plots", action="store_true",
                         help="Skip PNG plots (faster, for tests)")
+    parser.add_argument("--extra-labeled", default=None, metavar="CSV",
+                        help="feedback.csv from src/feedback.py: analyst labels "
+                             "override training labels before the split")
+    parser.add_argument("--no-gate", action="store_true",
+                        help="Bypass the golden-baseline metric gate (NOT for production runs)")
     args = parser.parse_args()
     main(test_size=args.test_size, seed=args.seed,
-         threshold=args.threshold, no_plots=args.no_plots)
+         threshold=args.threshold, no_plots=args.no_plots,
+         extra_labeled=args.extra_labeled, no_gate=args.no_gate)

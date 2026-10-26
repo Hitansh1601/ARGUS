@@ -28,7 +28,7 @@ Expect: `38+ passed` fast (`pytest -m "not e2e"`), e2e on demand (`pytest -m e2e
 python src/train_model.py
 ```
 
-Expect: `Precision 1.0 / Recall 1.0 / F1 1.0 / AUC 1.0`, 720 test windows.
+Expect: `Precision 1.0 / Recall 1.0 / F1 1.0 / AUC 1.0`, 810 test windows.
 Show: `results/argus_confusion_matrix.png`, `results/metrics.json` (CI gate),
 `results/feature_importance.csv` (event_count 0.27, file_modify 0.25, file_rename 0.14).
 
@@ -56,11 +56,21 @@ behavior via rename + entropy."
 
 ```powershell
 python src/argus_alert.py --top 2
+python src/argus_alert.py --top 6 --dedup   # collapse repeats per run/scenario
 python src/argus_alert.py --top 1 --json
 python src/argus_alert.py --live --limit 2 --threshold 0.5
 ```
 
-Expect: CRITICAL boxes, same data as JSON, `Live replay` over 2880 windows.
+Expect: CRITICAL boxes, deduped view, same data as JSON, `Live replay` over 3240 windows.
+
+Analyst loop (30s):
+
+```powershell
+python src/feedback.py label --run BRUTE_FORCE_ATTACK-0001 --window 2 --label 1 --note "confirmed"
+python src/feedback.py stats
+python src/train_model.py --extra-labeled results/feedback.csv --no-plots
+# expect: "Merged analyst labels: ..." then "Gate passed ..."
+```
 
 ## 4. Dashboard (30s)
 
@@ -75,7 +85,7 @@ Then open `results/dashboard.html` (offline, embedded plots).
 Open `results/generalization_report.md`:
 
 - Standard split: AUC 1.0, F1 1.0.
-- LOSO: **all 6 held-out attacks detected at 0.5** (F1 1.0 on all 6 folds).
+- LOSO: **all 7 held-out attacks detected at 0.5** (worst F1 0.9916).
   With the old 6-scenario simulator this was F1 = 0.0 everywhere — adding
   auth-heavy and C2-heavy scenarios forced shared-feature learning.
   Protected by the LOSO gate test (`test_generalization_contract.py`).

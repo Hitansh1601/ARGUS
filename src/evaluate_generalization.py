@@ -47,7 +47,8 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 METADATA_COLS = ["label", "scenario", "dominant_phase", "run_id", "host_id", "window_id"]
 ATTACK_SCENARIOS = ["powershell_attack", "persistence_attack", "ransomware_like",
-                    "multi_stage_attack", "brute_force_attack", "c2_heavy_attack"]
+                    "multi_stage_attack", "brute_force_attack", "c2_heavy_attack",
+                    "low_slow_exfil"]
 BENIGN_SCENARIOS = ["benign_normal", "benign_high_entropy"]
 
 MODEL_KWARGS = dict(
@@ -227,15 +228,16 @@ def main():
     benign_std = benign_breakdown(y_std, p_std, std_test_df, thresholds=(0.5, float(best_f1["threshold"])))
 
     # Data-driven conclusion (no hardcoded story: with 6 scenarios the
-    # model had zero transfer; with 8 it generalizes -- report what ran).
+    # model had zero transfer; with 8+ it generalizes -- report what ran).
     min_f1 = min(r["at_0.5"]["f1"] for r in loso) if loso else 0.0
     if min_f1 >= 0.90:
         verdict = (
             f"LOSO passes: every held-out attack is detected at the default "
             f"0.5 threshold (worst F1@0.5={min_f1:.4f}). Scenario diversity "
-            f"(8 scenarios incl. brute-force auth and C2 beacons) forced the "
-            f"model onto shared behavioral features instead of disjoint "
-            f"indicators. Keep the LOSO gate in CI to catch regressions."
+            f"({len(loso) + 2} scenarios incl. auth-heavy, C2 and quiet "
+            f"low-and-slow attacks) forced the model onto shared behavioral "
+            f"features instead of disjoint indicators. Keep the LOSO gate in "
+            f"CI to catch regressions."
         )
     else:
         weak = [r["held_out"] for r in loso if r["at_0.5"]["f1"] < 0.90]

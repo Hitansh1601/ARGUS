@@ -192,7 +192,22 @@ def emit_json(rows: pd.DataFrame):
     print(json.dumps(records, indent=2))
 
 
-def pick_batch(scored: pd.DataFrame, scenario: str | None, limit: int, threshold: float) -> pd.DataFrame:
+def dedup_hits(hits: pd.DataFrame) -> pd.DataFrame:
+    """Collapse to one row per (run_id, scenario, severity), keeping the
+    highest-risk window and counting how many it stands for."""
+    if hits.empty:
+        return hits
+    out = (hits.sort_values(["_risk", "_proba"], ascending=False)
+           .groupby(["run_id", "scenario", "_severity"], as_index=False)
+           .first())
+    counts = hits.groupby(["run_id", "scenario", "_severity"]).size()
+    out["_dupes"] = out.set_index(
+        ["run_id", "scenario", "_severity"]).index.map(counts).to_numpy()
+    return out.sort_values(["_risk", "_proba"], ascending=False).reset_index(drop=True)
+
+
+def pick_batch(scored: pd.DataFrame, scenario: str | None, limit: int, threshold: float,
+               dedup: bool = False) -> pd.DataFrame:
     pool = scored
     if scenario:
         pool = pool[pool["scenario"] == scenario]
@@ -201,29 +216,37 @@ def pick_batch(scored: pd.DataFrame, scenario: str | None, limit: int, threshold
     # above-threshold first, ranked by risk then proba
     above = pool[pool["_proba"] >= threshold].sort_values(["_risk", "_proba"], ascending=False)
     if len(above) >= limit:
-        return above.head(limit)
+        rows = above.head(limit)
+        return dedup_hits(rows) if dedup else rows
     # backfill with highest-risk windows so demo never prints nothing
     rest = pool.sort_values(["_risk", "_proba"], ascending=False)
-    return rest.head(limit)
+    rows = rest.head(limit)
+    return dedup_hits(rows) if dedup else rows
 
 
 def run_batch(scored: pd.DataFrame, scenario: str | None, top: int, limit: int,
-              threshold: float, as_json: bool):
+              threshold: float, as_json: bool, dedup: bool = False):
     n = top or limit
-    rows = pick_batch(scored, scenario, n, threshold)
+    rows = pick_batch(scored, scenario, n, threshold, dedup=dedup)
     if as_json:
         emit_json(rows)
         return len(rows)
     for _, row in rows.iterrows():
+        if "_dupes" in rows.columns and int(row["_dupes"]) > 1:
+            print(f"(+{int(row['_dupes']) - 1} similar alert(s) collapsed)")
         print_alert(row, float(row["_proba"]), float(row["_risk"]), str(row["_severity"]))
-    log.info("Displayed %d alert(s) (threshold=%.2f%s)", len(rows), threshold,
-             f", scenario={scenario}" if scenario else "")
+    log.info("Displayed %d alert(s) (threshold=%.2f%s%s)", len(rows), threshold,
+             f", scenario={scenario}" if scenario else "",
+             ", deduped" if dedup else "")
     return len(rows)
 
 
-def run_live(scored: pd.DataFrame, threshold: float, limit: int, as_json: bool, delay: float = 0.0):
+def run_live(scored: pd.DataFrame, threshold: float, limit: int, as_json: bool,
+             delay: float = 0.0, dedup: bool = False):
     ordered = scored.sort_values(["run_id", "window_id"]).reset_index(drop=True)
     hits = ordered[ordered["_proba"] >= threshold].head(limit)
+    if dedup:
+        hits = dedup_hits(hits)
     log.info("Live replay: %d/%d windows above %.2f", len(hits), len(ordered), threshold)
     if as_json:
         emit_json(hits)
@@ -269,6 +292,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--interval", type=int, default=5, help="watch poll seconds (default 5)")
     p.add_argument("--json", action="store_true", help="machine-readable JSON instead of boxes")
     p.add_argument("--delay", type=float, default=0.0, help="sleep between live alerts (demo pacing)")
+    p.add_argument("--dedup", action="store_true",
+                   help="collapse repeats to one alert per run/scenario/severity")
     return p
 
 
@@ -287,7 +312,7 @@ def main(argv=None):
     scored = score_all(model, df)
 
     if args.live:
-        run_live(scored, threshold, args.limit, args.json, args.delay)
+        run_live(scored, threshold, args.limit, args.json, args.delay, args.dedup)
     else:
         # default preserves old demo: top ransomware_like window when no flags
         scenario = args.scenario
@@ -305,7 +330,7 @@ def main(argv=None):
                 for _, row in rows.iterrows():
                     print_alert(row, float(row["_proba"]), float(row["_risk"]), str(row["_severity"]))
             return 0
-        run_batch(scored, scenario, top, args.limit, threshold, args.json)
+        run_batch(scored, scenario, top, args.limit, threshold, args.json, args.dedup)
     return 0
 
 

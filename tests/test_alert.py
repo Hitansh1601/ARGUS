@@ -69,3 +69,32 @@ def test_evidence_parity_with_risk():
 def test_evidence_empty():
     from argus_alert import collect_evidence
     assert collect_evidence({}) == ["No strong behavioral indicators"]
+
+
+def _dupes_df():
+    import pandas as pd
+    return pd.DataFrame([
+        {"run_id": "R1", "window_id": 0, "scenario": "ransomware_like",
+         "_proba": 0.99, "_risk": 90.0, "_severity": "CRITICAL"},
+        {"run_id": "R1", "window_id": 1, "scenario": "ransomware_like",
+         "_proba": 0.98, "_risk": 85.0, "_severity": "CRITICAL"},
+        {"run_id": "R2", "window_id": 0, "scenario": "brute_force_attack",
+         "_proba": 0.97, "_risk": 70.0, "_severity": "HIGH"},
+    ])
+
+
+def test_dedup_collapses_same_run():
+    from argus_alert import dedup_hits, pick_batch
+    out = dedup_hits(_dupes_df())
+    assert len(out) == 2  # R1 pair -> 1, R2 stays
+    r1 = out[out["run_id"] == "R1"].iloc[0]
+    assert r1["_dupes"] == 2 and r1["_risk"] == 90.0  # keeps hottest
+    assert out[out["run_id"] == "R2"].iloc[0]["_dupes"] == 1
+
+
+def test_pick_batch_dedup_flag():
+    from argus_alert import pick_batch
+    plain = pick_batch(_dupes_df(), None, limit=10, threshold=0.5)
+    assert len(plain) == 3 and "_dupes" not in plain.columns
+    dd = pick_batch(_dupes_df(), None, limit=10, threshold=0.5, dedup=True)
+    assert len(dd) == 2 and dd["_dupes"].tolist() == [2, 1]

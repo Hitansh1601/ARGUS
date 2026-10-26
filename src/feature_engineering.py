@@ -26,11 +26,21 @@ OUTPUT_FILE = (
 WINDOW_SECONDS = 30
 HIGH_ENTROPY_DELTA_THRESHOLD = 1.0
 
+# PowerShell family (exact "powershell.exe" alone misses pwsh/ISE and
+# full-path invocation). Shared with tests.
+POWERSHELL_FAMILY = [
+    "powershell.exe",
+    "pwsh.exe",
+    "powershell_ise.exe",
+]
+
 REQUIRED_COLUMNS = {"timestamp", "run_id", "host_id", "window_id"}
 
-# Model-input prune list: gain == 0.0 on the 8-scenario set (see
-# results/feature_importance.csv). Kept OUT of the XGBoost input; raw
-# aggregation above + rule-side scoring still see these signals.
+# Model-input prune list: gain == 0.0 on the reference data AND no
+# downstream consumer (see results/feature_importance.csv). Kept despite
+# ~0 gain: cmd_count + process_tree_depth feed rule-side evidence and the
+# features_v2 hidden_artifact rule. Kept OUT of the XGBoost input; raw
+# aggregation above + rule-side scoring still see pruned signals.
 PRUNED_FEATURES = [
     "file_delete_count",
     "suspicious_parent_child_count",
@@ -115,41 +125,57 @@ def build_features(df):
     # Process features
     # -----------------------------------------------------
 
-    df["is_powershell"] = (
+    # Basename match: catches full-path execution
+    # (C:\...\powershell.exe) and case variants.
+    proc_base = (
         df["process_name"]
         .fillna("")
         .str.lower()
-        .eq("powershell.exe")
+        .str.replace("/", "\\", regex=False)
+        .str.split("\\")
+        .str[-1]
     )
 
-    df["is_cmd"] = (
-        df["process_name"]
+    parent_base = (
+        df["parent_process"]
         .fillna("")
         .str.lower()
-        .eq("cmd.exe")
+        .str.replace("/", "\\", regex=False)
+        .str.split("\\")
+        .str[-1]
     )
 
+    # PowerShell family (exact "powershell.exe" alone misses pwsh/ISE).
+    df["is_powershell"] = proc_base.isin(POWERSHELL_FAMILY)
+
+    df["is_cmd"] = proc_base.eq("cmd.exe")
+
+    # LOLBin children frequently abused for execution/proxying.
     suspicious_children = [
         "powershell.exe",
+        "pwsh.exe",
+        "powershell_ise.exe",
         "cmd.exe",
+        "wscript.exe",
+        "cscript.exe",
+        "mshta.exe",
+        "rundll32.exe",
+        "wmic.exe",
+        "msbuild.exe",
     ]
 
     suspicious_parents = [
         "winword.exe",
         "excel.exe",
         "outlook.exe",
+        "powerpnt.exe",
+        "acrord32.exe",
     ]
 
     df["suspicious_parent_child"] = (
-        df["parent_process"]
-        .fillna("")
-        .str.lower()
-        .isin(suspicious_parents)
+        parent_base.isin(suspicious_parents)
         &
-        df["process_name"]
-        .fillna("")
-        .str.lower()
-        .isin(suspicious_children)
+        proc_base.isin(suspicious_children)
     )
 
     # -----------------------------------------------------
@@ -289,9 +315,11 @@ def build_features(df):
     features["persistence_key_count"] = grouped[
         "registry_key"
     ].apply(
+        # Run, RunOnce and RunServices are all auto-start persistence.
         lambda x: x.fillna("").str.contains(
-            r"CurrentVersion\Run",
-            regex=False
+            r"CurrentVersion\\Run(?:Once|Services)?",
+            case=False,
+            regex=True
         ).sum()
     )
 

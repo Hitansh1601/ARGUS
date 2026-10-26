@@ -15,6 +15,7 @@ from simulator.generator import (
     generate_ransomware,
     make_event,
 )
+from feature_engineering import POWERSHELL_FAMILY
 
 
 def _ts():
@@ -59,7 +60,8 @@ def test_multi_stage_windows_dispatch():
     assert all(e["label"] == 0 for e in generate_multi_stage(_ts(), "h", "r", 0))
     assert all(e["label"] == 0 for e in generate_multi_stage(_ts(), "h", "r", 1))
     w2 = generate_multi_stage(_ts(), "h", "r", 2)
-    assert any(e["process_name"] == "powershell.exe" for e in w2)
+    assert any(str(e["process_name"]).lower().split("\\")[-1] in POWERSHELL_FAMILY
+               for e in w2)
     w4 = generate_multi_stage(_ts(), "h", "r", 4)
     assert w4[0]["scenario"] == "multi_stage_attack"
 
@@ -83,4 +85,14 @@ def test_c2_heavy_network_volume():
 def test_scenarios_include_new():
     assert "brute_force_attack" in SCENARIOS
     assert "c2_heavy_attack" in SCENARIOS
-    assert len(SCENARIOS) == 8
+    assert "low_slow_exfil" in SCENARIOS
+    assert len(SCENARIOS) == 9
+
+
+def test_low_slow_is_quiet():
+    from simulator.generator import generate_low_slow
+    evs = generate_low_slow(_ts(), "h", "r", 0)
+    assert all(e["label"] == 1 for e in evs)
+    nets = [e for e in evs if e["event_type"] == "network_connection"]
+    assert 1 <= len(nets) <= 2  # sparse, below bursty thresholds
+    assert all(e["event_type"] != "file_write" for e in evs)

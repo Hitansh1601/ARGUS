@@ -1,11 +1,16 @@
-"""Contract for Task 1 outputs: structure + sane standard metrics.
+"""Contract for evaluation outputs: structure + sane standard metrics.
 
 Does NOT assert LOSO failure as a requirement (that would block fixing it);
 it asserts the report exists, is complete, and the standard split is strong
-while benign FPR stays low.
+while benign FPR stays low. A separate gate requires every held-out attack
+to be detected (recall the 6-scenario era, when this failed at F1=0.0).
 """
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from evaluate_generalization import ATTACK_SCENARIOS
 
 R = Path("results")
 
@@ -19,7 +24,7 @@ def load():
 def test_report_structure():
     r = load()
     assert "standard_group_split" in r
-    assert "loso" in r and len(r["loso"]) == 6
+    assert "loso" in r and len(r["loso"]) == len(ATTACK_SCENARIOS)
     assert "threshold_sweep" in r and len(r["threshold_sweep"]) > 5
     for entry in r["loso"]:
         assert "held_out" in entry and "at_0.5" in entry and "best_thresh_f1" in entry

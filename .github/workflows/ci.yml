@@ -3,6 +3,9 @@ name: ARGUS CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '0 3 * * 0'  # weekly e2e regen gate
+  workflow_dispatch:
 
 jobs:
   fast:
@@ -17,8 +20,8 @@ jobs:
 
   e2e:
     runs-on: windows-latest
-    # Full regen is slower (generator + train on ~3k windows); run on demand.
-    if: contains(github.event.head_commit.message, '[e2e]')
+    # Full regen is slower (generator + train on ~3k windows); weekly + on demand.
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[e2e]')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
