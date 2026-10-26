@@ -21,7 +21,7 @@ def test_model_loads():
     assert model_path.exists(), "Run src/train_model.py first"
     m = XGBClassifier()
     m.load_model(model_path)
-    assert m.n_features_in_ == 30
+    assert m.n_features_in_ == 16  # 30 built - 14 pruned dead features
 
 
 def test_feature_csv_shape():

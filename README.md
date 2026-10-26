@@ -60,9 +60,10 @@ simulator/generator.py
   -> data/raw/synthetic/all_synthetic_telemetry.jsonl (~74.5k events, 2880 windows)
 
 src/feature_engineering.py
-  30 numeric window features: process / file+entropy / registry / network / auth / diversity
+  16 numeric model features (14 gain-0.0 pruned; raw signals kept for rules)
+  + process / file+entropy / registry / network / auth / diversity raw aggregates
   (validates schema; persistence regex fixed: CurrentVersion\Run now fires)
-  -> data/processed/argus_features.csv (2880 rows x 36 cols)
+  -> data/processed/argus_features.csv (2880 rows x 22 cols)
 
 src/train_model.py (XGBoost 250 trees, depth 5, lr 0.05, hist, n_jobs=1)
   train_and_evaluate() testable core; GroupShuffleSplit by run_id (25% test)
@@ -150,7 +151,9 @@ simulator/generator.py         synthetic telemetry generator (8 scenarios)
 src/feature_engineering.py     windowed feature builder (+validate_schema)
 src/train_model.py             train_and_evaluate() core + CLI + metrics.json
 src/risk_engine.py             WEIGHTS table + explain_risk() -> 0-100 score
-src/argus_alert.py             batch / live / watch alerting + collect_evidence()
+src/schema.py                  model-feature gate (fail fast on skew)
+src/feedback.py                analyst label/list/stats -> results/feedback.csv
+src/argus_alert.py             batch / live / watch alerting + collect_evidence() (+schema gate)
 src/evaluate_generalization.py LOSO (6 folds) + threshold + benign FPR
 src/validate_real.py           real-data side-by-side
 src/config.py + config.yaml    central paths/hyperparams/thresholds
@@ -178,22 +181,24 @@ defaults so they run even without the config file.
 
 ## Limitations → roadmap
 
-1. **Dead features that stay dead** (`persistence_key_count`,
-   `network_connection_count`, `failed_login_count` at 0.0 even though the
-   telemetry now contains 874 persistence hits, brute-force logins, C2
-   beacons). LOSO passes anyway via shared features, but these signals are
-   wasted. Fix: prune them or reweight the simulator so they carry unique
-   information (Batch C remainder).
-2. **Calibration**: default 0.5 holds (tuned 0.05–0.10 gives the same F1 here);
+1. **Dead features pruned, not just documented.** Gain-0.0 columns are out of
+   the model input (30 → 16); rule-side WEIGHTS/evidence still read the raw
+   signals, so explainability is intact. Verified: standard split 1.0,
+   LOSO 6/6 at 0.5, demo PASS. Remaining zero-gain columns (if any reappear)
+   stay visible in `results/feature_importance.csv`.
+2. **Calibration**: default 0.5 holds (tuned 0.05-0.10 gives the same F1 here);
    threshold stays in `config.yaml: alerting.threshold` and `metrics.json`.
 3. **Real telemetry**: unified CIC-MalMem and ARGUS windows behind one
-   `features_v2` schema before claiming real-world performance — DONE as a
+   `features_v2` schema — DONE as a
    quantified negative (`src/features_v2.py`, `results/unified_report.md`):
    cross-source AUC 0.50 both ways. Next step needs a common sensor, not
    more mapping.
-4. **Live enforcement deliberately deferred**: the `argus-improvements`
+4. **Analyst loop started, retrain-merge pending.** `src/feedback.py`
+   accumulates labels into `results/feedback.csv`; wiring it into
+   `train_model.py --extra-labeled` is the explicit next step.
+5. **Live enforcement deliberately deferred**: the `argus-improvements`
    guard/collector/nightly-retrain stack (`src/guard.py`,
    `src/collector_windows.py`, Sysmon XML) is Windows-only + admin-gated.
    Adopt only on a Windows admin review box.
-5. **Ops**: dashboard is static HTML; next is streaming ingest
-   (watch dir) + alert dedup + analyst feedback loop.
+6. **Ops**: dashboard is static HTML; next is streaming ingest
+   (watch dir) + alert dedup on top of the new feedback file.

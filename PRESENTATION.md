@@ -6,7 +6,7 @@ Everything below was verified passing.
 ## Tabs to keep open
 
 1. `simulator/generator.py:14` — 8 scenarios
-2. `src/feature_engineering.py:39` — `build_features()`, 30 window features + `validate_schema()`
+2. `src/feature_engineering.py:39` — `build_features()`, 16 model features (14 dead pruned) + `validate_schema()`
 3. `src/train_model.py:82` — `train_and_evaluate()` testable core (`hist`, `n_jobs=1`) + `metrics.json`
 4. `src/risk_engine.py:1` — WEIGHTS table + `explain_risk()` → 0–100 + LOW/MED/HIGH/CRITICAL
 5. `src/argus_alert.py` — `collect_evidence()`, alert box, `pick_batch`, batch/live/watch/JSON CLI
@@ -90,8 +90,8 @@ Takeaway line: "Report AUC, not F1, for transfer claims."
 Do NOT re-run live on stage: `evaluate_generalization.py` (7 trainings),
 `validate_real.py` full (58,596 rows) — show the saved reports.
 
-Say: "Diversity fixed transfer. Remaining waste: persistence/network/auth
-features still sit at 0.0 importance — prune or reweight next."
+Say: "Diversity fixed transfer. Dead weight pruned since: 30 → 16 model
+features (gain-0.0 out), rules untouched, all gates still green."
 
 ## If asked for code paths
 

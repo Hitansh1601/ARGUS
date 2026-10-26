@@ -65,7 +65,12 @@ MODEL_KWARGS = dict(
 
 
 def features_labels(df: pd.DataFrame):
-    X = df.drop(columns=METADATA_COLS, errors="ignore").select_dtypes(include=["number"]).fillna(0)
+    try:
+        from src.schema import check_frame, expected_features
+    except ImportError:  # script-run fallback
+        from schema import check_frame, expected_features
+    cols = check_frame(df, expected_features(), source="features CSV")
+    X = df[cols].apply(pd.to_numeric, errors="coerce").fillna(0)
     y = df["label"].astype(int)
     return X, y
 

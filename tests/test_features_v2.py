@@ -22,7 +22,7 @@ def _cic_row(**kw):
 
 def _argus_row(**kw):
     base = {
-        "process_count": 3, "suspicious_parent_child_count": 0,
+        "process_count": 3,
         "process_tree_depth": 2, "label": 0,
     }
     base.update(kw)
@@ -48,13 +48,16 @@ def test_cic_malware_hidden_artifact():
 
 
 def test_argus_mapping():
+    # v2 keys ARGUS hidden_artifact on process depth alone
+    # (parent-child count was pruned from the model input; it still
+    # lives in risk/evidence rules).
     v2 = extract_argus(pd.DataFrame([
         _argus_row(),
-        _argus_row(suspicious_parent_child_count=1, label=1),
         _argus_row(process_tree_depth=5, label=1),
+        _argus_row(process_tree_depth=2, label=1),
     ]))
     assert v2["label"].tolist() == [0, 1, 1]
-    assert v2["hidden_artifact"].tolist() == [0, 1, 1]
+    assert v2["hidden_artifact"].tolist() == [0, 1, 0]
 
 
 def test_schema_no_nan_and_dtypes():

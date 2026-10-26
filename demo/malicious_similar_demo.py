@@ -67,9 +67,9 @@ def main():
                   f"rename={int(row['file_rename_count'])}, "
                   f"entropy_delta={float(row['entropy_delta_mean']):.2f}")
         if "powershell" in str(row["scenario"]):
-            print(f"   signals: powershell={int(row['powershell_count'])}, "
-                  f"cmd={int(row['cmd_count'])}, "
-                  f"suspicious_parent_child={int(row['suspicious_parent_child_count'])}")
+            print(f"   signals: powershell={int(row.get('powershell_count', 0))}, "
+                  f"cmd={int(row.get('cmd_count', 0))}, "
+                  f"suspicious_parent_child={int(row.get('suspicious_parent_child_count', 0))} (rule-side)")
     print("=" * 70)
 
     ok = (

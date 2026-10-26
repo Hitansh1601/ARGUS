@@ -12,8 +12,8 @@ Shared primitives (v2.0):
   hidden_artifact 0/1    # stealth indicator:
                          #   CIC: psxview hidden sum > 0 OR malfind injections > 0
                          #        OR ldrmodules not_in_mem > 0
-                         #   ARGUS: suspicious_parent_child_count > 0
-                         #        OR process_tree_depth >= 4
+                         #   ARGUS: process_tree_depth >= 4 (parent-child count
+                         #        pruned from model input; still in risk rules)
   label           0/1    # 0 benign, 1 malicious (same rule both sides)
   source          str    # 'cic' | 'argus' (for per-source breakdowns)
 
@@ -66,17 +66,20 @@ def extract_cic(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def extract_argus(df: pd.DataFrame) -> pd.DataFrame:
-    """Map an ARGUS window-features frame to v2."""
-    need = {"process_count", "suspicious_parent_child_count",
-            "process_tree_depth", "label"}
+    """Map an ARGUS window-features frame to v2.
+
+    Note: suspicious_parent_child_count was pruned from the model input
+    (gain 0.0), so the ARGUS side keys hidden_artifact on process depth
+    alone. The parent-child signal still lives in risk/evidence rules.
+    """
+    need = {"process_count", "process_tree_depth", "label"}
     missing = need - set(df.columns)
     if missing:
         raise ValueError(f"ARGUS frame missing {sorted(missing)}")
     num = df[list(need - {"label"})].apply(pd.to_numeric, errors="coerce").fillna(0)
     out = pd.DataFrame({
         "process_count": num["process_count"].astype(int),
-        "hidden_artifact": ((num["suspicious_parent_child_count"] > 0)
-                            | (num["process_tree_depth"] >= 4)).astype(int),
+        "hidden_artifact": (num["process_tree_depth"] >= 4).astype(int),
         "label": df["label"].astype(int),
         "source": "argus",
     })

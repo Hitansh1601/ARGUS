@@ -27,10 +27,10 @@
     {
       "protocol": "A argus-only",
       "n_test": 720,
-      "precision": 0.8069620253164557,
+      "precision": 0.8108108108108109,
       "recall": 1.0,
-      "f1": 0.8931698774080561,
-      "roc_auc": 0.8243977591036414
+      "f1": 0.8955223880597015,
+      "roc_auc": 0.8314985994397759
     },
     {
       "protocol": "B cic-only",
@@ -43,10 +43,10 @@
     {
       "protocol": "C joint->joint",
       "n_test": 5720,
-      "precision": 0.821701199563795,
+      "precision": 0.827113062568606,
       "recall": 0.4995028173682466,
-      "f1": 0.6213151927437641,
-      "roc_auc": 0.7350062557089552
+      "f1": 0.6228559619756148,
+      "roc_auc": 0.7378778241585999
     },
     {
       "protocol": "D cross cic->argus",
@@ -67,19 +67,19 @@
     {
       "protocol": "C joint->argus-slice",
       "n_test": 720,
-      "precision": 0.8069620253164557,
+      "precision": 0.8108108108108109,
       "recall": 1.0,
-      "f1": 0.8931698774080561,
-      "roc_auc": 0.8243977591036414
+      "f1": 0.8955223880597015,
+      "roc_auc": 0.831498599439776
     },
     {
       "protocol": "C joint->cic-slice",
       "n_test": 5000,
-      "precision": 0.8404344193817878,
-      "recall": 0.4011164274322169,
-      "f1": 0.5430499325236168,
-      "roc_auc": 0.7037630465335966
+      "precision": 0.8417085427135679,
+      "recall": 0.4007177033492823,
+      "f1": 0.5429497568881686,
+      "roc_auc": 0.7037636865401502
     }
   ],
-  "verdict": "v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.829/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion \u2014 both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it."
+  "verdict": "v2 does not unify the domains: cross-source ranking is chance (D cross cic->argus F1=0.829/AUC=0.500, D cross argus->cic F1=0.668/AUC=0.500; worst AUC=0.500). The high cross F1 is a base-rate illusion -- both cross models predict all-positive (recall 1.0, precision = base rate). The two shared primitives carry within-source signal (argus-only AUC 0.82) but no transferable semantics. A common sensor is required; post-hoc mapping cannot create it."
 }

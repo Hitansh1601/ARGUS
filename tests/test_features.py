@@ -44,7 +44,7 @@ def test_build_features_shape_and_labels():
     assert len(feats) == 3  # windows 0,1,2
     assert set(feats["label"].tolist()) == {0, 1}
     for col in ("event_count", "file_write_count", "entropy_delta_mean",
-                "signal_diversity", "scenario"):
+                "scenario"):
         assert col in feats.columns
     mal = feats[feats["label"] == 1].iloc[0]
     assert mal["file_write_count"] >= 5
@@ -113,7 +113,11 @@ def test_velocity_and_entropy_thresholds():
     assert HIGH_ENTROPY_DELTA_THRESHOLD == 1.0
 
 
-def test_persistence_and_diversity():
+def test_pruned_schema_drops_dead_features():
+    # Raw registry/auth/network events still parse, but gain-0.0 columns are
+    # pruned from the model input by design (see PRUNED_FEATURES). Rule-side
+    # scoring (risk_engine, collect_evidence) still reads these signals.
+    from feature_engineering import PRUNED_FEATURES
     ts = datetime(2026, 9, 29, 10, 0, 0)
     rows = [
         _row(ts, event_type="registry_modify", registry_key="HKCU\\a\\CurrentVersion\\Run",
@@ -128,17 +132,19 @@ def test_persistence_and_diversity():
              attack_phase="PERSISTENCE"),
     ]
     feats = build_features(pd.DataFrame(rows))
-    assert feats.iloc[0]["persistence_key_count"] == 1
-    assert feats.iloc[0]["failed_login_count"] == 1
-    assert feats.iloc[0]["network_connection_count"] == 1
-    assert feats.iloc[0]["signal_diversity"] == 3
     assert feats.iloc[0]["label"] == 1
+    assert feats.iloc[0]["event_count"] == 3
+    for col in PRUNED_FEATURES:
+        assert col not in feats.columns, f"{col} should be pruned"
+    assert len(PRUNED_FEATURES) == 14
 
 
 def test_suspicious_parent_child():
+    # Parent-child signal lives on the rule side now (risk + evidence);
+    # the model input keeps the process counts that matter.
     ts = datetime(2026, 9, 29, 10, 0, 0)
     df = pd.DataFrame([_row(ts, process_name="powershell.exe",
                              parent_process="WINWORD.EXE")])
     feats = build_features(df)
     assert feats.iloc[0]["powershell_count"] == 1
-    assert feats.iloc[0]["suspicious_parent_child_count"] == 1
+    assert "suspicious_parent_child_count" not in feats.columns

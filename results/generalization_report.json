@@ -400,7 +400,7 @@
       "n_test": 576,
       "n_test_attack": 360,
       "n_test_benign": 216,
-      "auc": 1.0,
+      "auc": 0.9999999999999999,
       "at_0.5": {
         "threshold": 0.5,
         "precision": 1.0,

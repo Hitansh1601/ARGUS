@@ -28,6 +28,26 @@ HIGH_ENTROPY_DELTA_THRESHOLD = 1.0
 
 REQUIRED_COLUMNS = {"timestamp", "run_id", "host_id", "window_id"}
 
+# Model-input prune list: gain == 0.0 on the 8-scenario set (see
+# results/feature_importance.csv). Kept OUT of the XGBoost input; raw
+# aggregation above + rule-side scoring still see these signals.
+PRUNED_FEATURES = [
+    "file_delete_count",
+    "suspicious_parent_child_count",
+    "registry_modify_count",
+    "persistence_key_count",
+    "network_connection_count",
+    "registry_event_count",
+    "unique_destinations",
+    "unique_ports",
+    "total_bytes_sent",
+    "total_bytes_received",
+    "auth_event_count",
+    "failed_login_count",
+    "successful_login_count",
+    "signal_diversity",
+]
+
 
 def validate_schema(df):
     """Fail fast with a helpful error if raw telemetry is malformed."""
@@ -365,6 +385,17 @@ def build_features(df):
     )
 
     features = features.fillna(0)
+
+    # -----------------------------------------------------
+    # Dead-model-feature prune
+    # -----------------------------------------------------
+    # Gain == 0.0 on 8-scenario data: the trees never split on these, so
+    # dropping them cannot change predictions (verified by metrics.json +
+    # LOSO gates after regen). Raw signals are still aggregated above for
+    # auditability; rule-side detection (risk_engine WEIGHTS,
+    # collect_evidence) reads them via .get() and is unaffected. Only the
+    # XGBoost input shrinks: 30 -> 16 features.
+    features = features.drop(columns=[c for c in PRUNED_FEATURES if c in features.columns])
 
     features = features.reset_index()
 

@@ -18,7 +18,7 @@ def test_train_metrics_gate():
     # Baseline was perfect 1.0; allow small dip after generator fix + new scenarios.
     for k in ["precision", "recall", "f1", "roc_auc"]:
         assert metrics[k] >= 0.90, f"{k}={metrics[k]} below gate"
-    assert len(metrics["feature_names"]) == 30
+    assert len(metrics["feature_names"]) == 16  # 30 built - 14 pruned
     # Compare to golden if present.
     golden = BASE_DIR / "tests" / "golden" / "baseline_metrics.json"
     if golden.exists():

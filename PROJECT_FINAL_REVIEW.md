@@ -54,9 +54,10 @@ claims**; post-hoc mapping cannot replace a common sensor.
 
 **Final polish (this pass).** One-command `review` target; ASCII-safe +
 explicit-UTF-8 report writes (console showed `?` for em-dashes); deterministic
-telemetry regen (seeded event IDs replace `uuid4` — re-running the generator
+telemetry regen (seeded event IDs replace `uuid4` - re-running the generator
 is byte-identical, e2e leaves a clean tree); dashboard changelog section
-(this page lists recent commits); this file.
+(this page lists recent commits); 30 → 16 model-feature prune with gates
+re-verified; schema gate + analyst feedback CLI; this file.
 
 ## 3. Current numbers
 

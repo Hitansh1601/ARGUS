@@ -86,7 +86,13 @@ def feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def score_all(model: XGBClassifier, df: pd.DataFrame) -> pd.DataFrame:
-    X = feature_matrix(df)
+    # Schema gate: fail fast if the CSV predates the model (missing inputs).
+    try:
+        from src.schema import check_frame, expected_features
+    except ImportError:  # script-run fallback
+        from schema import check_frame, expected_features
+    cols = check_frame(df, expected_features(), source="features CSV")
+    X = feature_matrix(df)[cols]
     proba = model.predict_proba(X)[:, 1]
     out = df.copy()
     out["_proba"] = proba
